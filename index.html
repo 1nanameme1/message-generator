@@ -355,10 +355,10 @@ html[data-theme="dark"] .modal textarea { color: #7af0a0; }
           </div>
         </div>
         <div id="margin-setting" class="field">
-          <label>좌우 여백 (버블 최대 너비)</label>
+          <label>버블 간격 (좁을수록 중앙에 가까워짐)</label>
           <div class="range-row">
-            <input type="range" id="margin-slider" min="40" max="90" step="5" value="70" oninput="setMaxWidth(this.value)">
-            <span class="range-val" id="margin-val">70%</span>
+            <input type="range" id="margin-slider" min="0" max="50" step="5" value="30" oninput="setGap(this.value)">
+            <span class="range-val" id="margin-val">30%</span>
           </div>
         </div>
       </div>
@@ -456,7 +456,7 @@ let selectedId  = null;
 let currentTab  = 'list';
 let isDark      = false;
 let alignment   = 'lr';
-let bubbleMaxW  = 70;
+let bubbleGap   = 30;
 
 function uid() { return Math.random().toString(36).slice(2); }
 
@@ -486,8 +486,8 @@ function setAlignment(mode) {
   renderPreview();
 }
 
-function setMaxWidth(val) {
-  bubbleMaxW = parseInt(val);
+function setGap(val) {
+  bubbleGap = parseInt(val);
   document.getElementById('margin-val').textContent = val + '%';
   renderPreview();
 }
@@ -714,15 +714,14 @@ function renderPreview() {
 
 function bubbleToHtml(b) {
   const isSent = b.type === 'sent';
-  const mw = bubbleMaxW + '%';
-
+  
   if (alignment === 'center') {
     const br = isSent
       ? 'border-radius:18px;border-bottom-right-radius:0;'
       : 'border-radius:18px;border-bottom-left-radius:0;';
     return `<div style="margin-bottom:10px;text-align:center;">
   <div style="font-size:10.5px;color:#888;margin-bottom:5px;">${escHtml(b.time)}</div>
-  <div style="display:inline-block;max-width:${mw};text-align:left;">
+  <div style="display:inline-block;max-width:75%;text-align:left;">
     <div style="padding:10px 15px;${br}font-size:${b.fontSize}px;background:${b.bgColor};color:${b.textColor};word-break:break-word;">${escHtml(b.text)}</div>
     <div style="font-size:10.5px;color:#888;margin-top:2px;">${escHtml(b.sender)}</div>
   </div>
@@ -730,12 +729,13 @@ function bubbleToHtml(b) {
   }
 
   const align = isSent ? 'right' : 'left';
+  const marginSide = isSent ? 'margin-left' : 'margin-right';
   const br = isSent
     ? 'border-radius:18px;border-bottom-right-radius:0;'
     : 'border-radius:18px;border-bottom-left-radius:0;';
-  return `<div style="margin-bottom:10px;text-align:${align};">
+  return `<div style="margin-bottom:10px;text-align:${align};${marginSide}:${bubbleGap}%;">
   <div style="font-size:10.5px;color:#888;margin-bottom:5px;">${escHtml(b.time)}</div>
-  <div style="display:inline-block;max-width:${mw};text-align:left;">
+  <div style="display:inline-block;max-width:75%;text-align:left;">
     <div style="padding:10px 15px;${br}font-size:${b.fontSize}px;background:${b.bgColor};color:${b.textColor};word-break:break-word;">${escHtml(b.text)}</div>
     <div style="font-size:10.5px;color:#888;margin-top:2px;text-align:${align};">${escHtml(b.sender)}</div>
   </div>
@@ -746,26 +746,26 @@ function bubbleToHtml(b) {
 function openCodeModal() {
   const html = bubbles.map(b => {
     const isSent = b.type === 'sent';
-    const mw = bubbleMaxW + '%';
     if (alignment === 'center') {
       const br = isSent
         ? 'border-radius: 18px; border-bottom-right-radius: 0;'
         : 'border-radius: 18px; border-bottom-left-radius: 0;';
       return `<div style="margin-bottom: 10px; text-align: center;">
     <div style="font-size: 10.5px; color: #888; margin-bottom: 5px;">${escHtml(b.time)}</div>
-    <div style="display: inline-block; max-width: ${mw}; text-align: left;">
+    <div style="display: inline-block; max-width: 75%; text-align: left;">
         <div style="padding: 10px 15px; ${br} font-size: ${b.fontSize}px; background: ${b.bgColor}; color: ${b.textColor}; word-break: break-word;">${escHtml(b.text)}</div>
         <div style="font-size: 10.5px; color: #888; margin-top: 2px;">${escHtml(b.sender)}</div>
     </div>
 </div>`;
     }
     const align = isSent ? 'right' : 'left';
+    const marginSide = isSent ? 'margin-left' : 'margin-right';
     const br = isSent
       ? 'border-radius: 18px; border-bottom-right-radius: 0;'
       : 'border-radius: 18px; border-bottom-left-radius: 0;';
-    return `<div style="margin-bottom: 10px; text-align: ${align};">
+    return `<div style="margin-bottom: 10px; text-align: ${align}; ${marginSide}: ${bubbleGap}%;">
     <div style="font-size: 10.5px; color: #888; margin-bottom: 5px;">${escHtml(b.time)}</div>
-    <div style="display: inline-block; max-width: ${mw}; text-align: left;">
+    <div style="display: inline-block; max-width: 75%; text-align: left;">
         <div style="padding: 10px 15px; ${br} font-size: ${b.fontSize}px; background: ${b.bgColor}; color: ${b.textColor}; word-break: break-word;">${escHtml(b.text)}</div>
         <div style="font-size: 10.5px; color: #888; margin-top: 2px; text-align: ${align};">${escHtml(b.sender)}</div>
     </div>
@@ -787,10 +787,10 @@ function exportImage() {
   const el = document.getElementById('chat-preview');
   const prevBg  = el.style.backgroundColor;
   const prevPad = el.style.padding;
-  el.style.backgroundColor = '#ffffff';
+  el.style.backgroundColor = 'transparent';
   el.style.padding = '20px';
   showToast('⏳ 이미지 생성 중...');
-  html2canvas(el, { backgroundColor: '#ffffff', scale: 2, useCORS: true }).then(canvas => {
+  html2canvas(el, { backgroundColor: null, scale: 2, useCORS: true }).then(canvas => {
     el.style.backgroundColor = prevBg;
     el.style.padding = prevPad;
     const link = document.createElement('a');
