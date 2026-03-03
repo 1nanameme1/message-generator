@@ -392,6 +392,17 @@ html[data-theme="dark"] .modal textarea { color: #7af0a0; }
         <button class="btn" style="font-size:13px;padding:11px;" onclick="applyGlobalColors('recv')">✓ 받은 버블 모두 적용</button>
       </div>
 
+      <div class="settings-card">
+        <div class="settings-card-title">📏 전체 폰트 크기</div>
+        <div class="field">
+          <div class="range-row">
+            <input type="range" id="g-fs-slider" min="10" max="24" step="0.5" value="14.5">
+            <span class="range-val" id="g-fs-val">14.5px</span>
+          </div>
+        </div>
+        <button class="btn" style="font-size:13px;padding:11px;" onclick="applyGlobalFontSize()">✓ 모든 버블에 크기 적용</button>
+      </div>
+
       <div style="height:8px;flex-shrink:0"></div>
     </div>
   </div>
@@ -439,10 +450,10 @@ html[data-theme="dark"] .modal textarea { color: #7af0a0; }
 
 <script>
 let bubbles = [
-  { id: uid(), type: 'sent',  sender: '나',    time: '2024-03-01 10:30 AM', text: '안녕하세요! 이것은 보낸 메세지입니다.', bgColor: '#007aff', textColor: '#ffffff', fontSize: 14.2 },
-  { id: uid(), type: 'recv',  sender: '상대방', time: '2024-03-01 10:31 AM', text: '안녕하세요! 이것은 받은 메세지입니다.', bgColor: '#e5e5ea', textColor: '#000000', fontSize: 14.2 },
-  { id: uid(), type: 'sent',  sender: '나',    time: '2024-03-01 10:32 AM', text: '오늘 날씨가 정말 좋네요!', bgColor: '#007aff', textColor: '#ffffff', fontSize: 14.2 },
-  { id: uid(), type: 'recv',  sender: '상대방', time: '2024-03-01 10:33 AM', text: '네, 정말 그렇네요. 산책하기 좋은 날씨입니다.', bgColor: '#e5e5ea', textColor: '#000000', fontSize: 14.2 },
+  { id: uid(), type: 'sent',  sender: '나',    time: '2024-03-01 10:30 AM', text: '안녕하세요! 이것은 보낸 메세지입니다.', bgColor: '#007aff', textColor: '#ffffff', fontSize: 14.5 },
+  { id: uid(), type: 'recv',  sender: '상대방', time: '2024-03-01 10:31 AM', text: '안녕하세요! 이것은 받은 메세지입니다.', bgColor: '#e5e5ea', textColor: '#000000', fontSize: 14.5 },
+  { id: uid(), type: 'sent',  sender: '나',    time: '2024-03-01 10:32 AM', text: '오늘 날씨가 정말 좋네요!', bgColor: '#007aff', textColor: '#ffffff', fontSize: 14.5 },
+  { id: uid(), type: 'recv',  sender: '상대방', time: '2024-03-01 10:33 AM', text: '네, 정말 그렇네요. 산책하기 좋은 날씨입니다.', bgColor: '#e5e5ea', textColor: '#000000', fontSize: 14.5 },
 ];
 
 let selectedId  = null;
@@ -503,6 +514,26 @@ function applyGlobalColors(type) {
   showToast(`✓ ${type === 'sent' ? '보낸' : '받은'} 버블 색상 일괄 적용됨`);
 }
 
+/* ── 폰트 크기 일괄 적용 기능 ── */
+
+// 슬라이더 숫자를 실시간으로 보여주는 이벤트 리스너 (INIT 부분에 추가해도 좋습니다)
+document.getElementById('g-fs-slider').addEventListener('input', function() {
+  document.getElementById('g-fs-val').textContent = this.value + 'px';
+});
+
+function applyGlobalFontSize() {
+  const newSize = parseFloat(document.getElementById('g-fs-slider').value);
+  
+  // 모든 버블의 폰트 크기를 변경
+  bubbles.forEach(b => {
+    b.fontSize = newSize;
+  });
+  
+  // UI 업데이트
+  render(); 
+  showToast(`✅ 모든 버블이 ${newSize}px로 변경되었습니다.`);
+}
+  
 /* ── BUBBLE CRUD ── */
 function addBubble(type) {
   const b = {
@@ -512,7 +543,7 @@ function addBubble(type) {
     text: type === 'sent' ? '보낸 메세지를 입력하세요.' : '받은 메세지를 입력하세요.',
     bgColor:   document.getElementById(type === 'sent' ? 'g-sent-bg' : 'g-recv-bg').value,
     textColor: document.getElementById(type === 'sent' ? 'g-sent-tc' : 'g-recv-tc').value,
-    fontSize: 14.2
+    fontSize: 14.5
   };
   bubbles.push(b);
   render();
