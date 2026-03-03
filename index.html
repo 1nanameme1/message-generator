@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>메시지 버블 생성기</title>
+<title>💬간단 메세지 생성기</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
@@ -317,7 +317,7 @@ html[data-theme="dark"] .modal textarea { color: #7af0a0; }
 <header>
   <div class="header-left">
     <div class="logo-icon">💬</div>
-    <h1>메시지 버블 생성기</h1>
+    <h1>간단 메세지 생성기</h1>
   </div>
   <div class="header-actions">
     <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()" title="다크/라이트 모드 전환">🌙</button>
@@ -446,8 +446,8 @@ html[data-theme="dark"] .modal textarea { color: #7af0a0; }
 
 <script>
 let bubbles = [
-  { id: uid(), type: 'sent',  sender: '나',    time: '2024-03-01 10:30 AM', text: '안녕하세요! 이것은 보낸 메시지입니다.', bgColor: '#007aff', textColor: '#ffffff', fontSize: 14.2 },
-  { id: uid(), type: 'recv',  sender: '상대방', time: '2024-03-01 10:31 AM', text: '안녕하세요! 이것은 받은 메시지입니다.', bgColor: '#e5e5ea', textColor: '#000000', fontSize: 14.2 },
+  { id: uid(), type: 'sent',  sender: '나',    time: '2024-03-01 10:30 AM', text: '안녕하세요! 이것은 보낸 메세지입니다.', bgColor: '#007aff', textColor: '#ffffff', fontSize: 14.2 },
+  { id: uid(), type: 'recv',  sender: '상대방', time: '2024-03-01 10:31 AM', text: '안녕하세요! 이것은 받은 메세지입니다.', bgColor: '#e5e5ea', textColor: '#000000', fontSize: 14.2 },
   { id: uid(), type: 'sent',  sender: '나',    time: '2024-03-01 10:32 AM', text: '오늘 날씨가 정말 좋네요!', bgColor: '#007aff', textColor: '#ffffff', fontSize: 14.2 },
   { id: uid(), type: 'recv',  sender: '상대방', time: '2024-03-01 10:33 AM', text: '네, 정말 그렇네요. 산책하기 좋은 날씨입니다.', bgColor: '#e5e5ea', textColor: '#000000', fontSize: 14.2 },
 ];
@@ -524,7 +524,7 @@ function addBubble(type) {
     id: uid(), type,
     sender: type === 'sent' ? '나' : '상대방',
     time: formatNow(),
-    text: type === 'sent' ? '보낸 메시지를 입력하세요.' : '받은 메시지를 입력하세요.',
+    text: type === 'sent' ? '보낸 메세지를 입력하세요.' : '받은 메세지를 입력하세요.',
     bgColor:   document.getElementById(type === 'sent' ? 'g-sent-bg' : 'g-recv-bg').value,
     textColor: document.getElementById(type === 'sent' ? 'g-sent-tc' : 'g-recv-tc').value,
     fontSize: 14.2
@@ -616,10 +616,10 @@ function renderEditor() {
     return;
   }
   panel.innerHTML = `
-    <p class="section-label">${b.type==='sent'?'보낸':'받은'} 메시지 편집</p>
+    <p class="section-label">${b.type==='sent'?'보낸':'받은'} 메세지 편집</p>
 
     <div class="field">
-      <label>메시지 내용</label>
+      <label>메세지 내용</label>
       <textarea id="e-text" rows="3">${escHtml(b.text)}</textarea>
     </div>
     <div class="field">
@@ -636,8 +636,8 @@ function renderEditor() {
     <div class="field">
       <label>말풍선 유형</label>
       <div class="radio-group">
-        <div class="radio-btn ${b.type==='sent'?'active':''}" onclick="changeType('sent')">보낸 메시지</div>
-        <div class="radio-btn ${b.type==='recv'?'active':''}" onclick="changeType('recv')">받은 메시지</div>
+        <div class="radio-btn ${b.type==='sent'?'active':''}" onclick="changeType('sent')">보낸 메세지</div>
+        <div class="radio-btn ${b.type==='recv'?'active':''}" onclick="changeType('recv')">받은 메세지</div>
       </div>
     </div>
 
