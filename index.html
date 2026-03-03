@@ -732,17 +732,15 @@ function bubbleToHtml(b) {
   const isSent = b.type === 'sent';
   
   if (alignment === 'center') {
-    const br = isSent
-      ? 'border-radius:18px;border-bottom-right-radius:0;'
-      : 'border-radius:18px;border-bottom-left-radius:0;';
-    return `<div style="margin-bottom:10px;text-align:center;">
-  <div style="font-size:10.5px;color:#888;margin-bottom:5px;">${escHtml(b.time)}</div>
-  <div style="display:inline-block;max-width:75%;text-align:left;">
-    <div style="padding:10px 15px;${br}font-size:${b.fontSize}px;background:${b.bgColor};color:${b.textColor};word-break:break-word;">${escHtml(b.text)}</div>
-    <div style="font-size:10.5px;color:#888;margin-top:2px;">${escHtml(b.sender)}</div>
-  </div>
+  const br = isSent
+    ? 'border-radius:18px;border-bottom-right-radius:0;'
+    : 'border-radius:18px;border-bottom-left-radius:0;';
+  return `<div style="margin-bottom:15px; text-align:center;">
+  <div style="font-size:10.5px; color:#888; margin-bottom:5px;">${escHtml(b.time)}</div>
+  <div style="display:inline-block; max-width:85%; text-align:center;"> <div style="display:inline-block; padding:10px 15px; ${br} font-size:${b.fontSize}px; background:${b.bgColor}; color:${b.textColor}; word-break:break-word; text-align:left;">${escHtml(b.text)}</div>
+    <div style="font-size:10.5px; color:#888; margin-top:4px; text-align:center;">${escHtml(b.sender)}</div> </div>
 </div>`;
-  }
+}
 
   // 좌우 정렬: 중앙에서 시작해서 bubbleGap만큼 벌어짐
   const align = isSent ? 'right' : 'left';
@@ -766,17 +764,17 @@ function openCodeModal() {
   const html = bubbles.map(b => {
     const isSent = b.type === 'sent';
     if (alignment === 'center') {
-      const br = isSent
-        ? 'border-radius: 18px; border-bottom-right-radius: 0;'
-        : 'border-radius: 18px; border-bottom-left-radius: 0;';
-      return `<div style="margin-bottom: 10px; text-align: center;">
+  const br = isSent
+    ? 'border-radius: 18px; border-bottom-right-radius: 0;'
+    : 'border-radius: 18px; border-bottom-left-radius: 0;';
+  return `<div style="margin-bottom: 15px; text-align: center;">
     <div style="font-size: 10.5px; color: #888; margin-bottom: 5px;">${escHtml(b.time)}</div>
-    <div style="display: inline-block; max-width: 75%; text-align: left;">
-        <div style="padding: 10px 15px; ${br} font-size: ${b.fontSize}px; background: ${b.bgColor}; color: ${b.textColor}; word-break: break-word;">${escHtml(b.text)}</div>
-        <div style="font-size: 10.5px; color: #888; margin-top: 2px;">${escHtml(b.sender)}</div>
+    <div style="display: inline-block; max-width: 85%; text-align: center;">
+        <div style="display: inline-block; padding: 10px 15px; ${br} font-size: ${b.fontSize}px; background: ${b.bgColor}; color: ${b.textColor}; word-break: break-word; text-align: left;">${escHtml(b.text)}</div>
+        <div style="font-size: 10.5px; color: #888; margin-top: 4px; text-align: center;">${escHtml(b.sender)}</div>
     </div>
 </div>`;
-    }
+}
     const align = isSent ? 'right' : 'left';
     const centerOffset = 50 - (75 / 2);
     const leftPadding = isSent ? (centerOffset + bubbleGap) : centerOffset;
