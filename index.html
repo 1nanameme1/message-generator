@@ -355,9 +355,9 @@ html[data-theme="dark"] .modal textarea { color: #7af0a0; }
           </div>
         </div>
         <div id="margin-setting" class="field">
-          <label>버블 간격 (좁을수록 중앙에 가까워짐)</label>
+          <label>버블 간격 (작을수록 중앙에 가까워짐)</label>
           <div class="range-row">
-            <input type="range" id="margin-slider" min="-30" max="50" step="5" value="10" oninput="setGap(this.value)">
+            <input type="range" id="margin-slider" min="0" max="45" step="5" value="10" oninput="setGap(this.value)">
             <span class="range-val" id="margin-val">10%</span>
           </div>
         </div>
@@ -729,12 +729,12 @@ function bubbleToHtml(b) {
   }
 
   const align = isSent ? 'right' : 'left';
-  const marginLeft = isSent ? bubbleGap : 0;
-  const marginRight = isSent ? 0 : bubbleGap;
+  const leftMargin = isSent ? Math.max(0, bubbleGap) : 0;
+  const rightMargin = isSent ? 0 : Math.max(0, bubbleGap);
   const br = isSent
     ? 'border-radius:18px;border-bottom-right-radius:0;'
     : 'border-radius:18px;border-bottom-left-radius:0;';
-  return `<div style="margin-bottom:10px;margin-left:${marginLeft}%;margin-right:${marginRight}%;text-align:${align};">
+  return `<div style="margin-bottom:10px;padding-left:${leftMargin}%;padding-right:${rightMargin}%;text-align:${align};">
   <div style="font-size:10.5px;color:#888;margin-bottom:5px;">${escHtml(b.time)}</div>
   <div style="display:inline-block;max-width:75%;text-align:left;">
     <div style="padding:10px 15px;${br}font-size:${b.fontSize}px;background:${b.bgColor};color:${b.textColor};word-break:break-word;">${escHtml(b.text)}</div>
@@ -760,12 +760,12 @@ function openCodeModal() {
 </div>`;
     }
     const align = isSent ? 'right' : 'left';
-    const marginLeft = isSent ? bubbleGap : 0;
-    const marginRight = isSent ? 0 : bubbleGap;
+    const leftMargin = isSent ? Math.max(0, bubbleGap) : 0;
+    const rightMargin = isSent ? 0 : Math.max(0, bubbleGap);
     const br = isSent
       ? 'border-radius: 18px; border-bottom-right-radius: 0;'
       : 'border-radius: 18px; border-bottom-left-radius: 0;';
-    return `<div style="margin-bottom: 10px; margin-left: ${marginLeft}%; margin-right: ${marginRight}%; text-align: ${align};">
+    return `<div style="margin-bottom: 10px; padding-left: ${leftMargin}%; padding-right: ${rightMargin}%; text-align: ${align};">
     <div style="font-size: 10.5px; color: #888; margin-bottom: 5px;">${escHtml(b.time)}</div>
     <div style="display: inline-block; max-width: 75%; text-align: left;">
         <div style="padding: 10px 15px; ${br} font-size: ${b.fontSize}px; background: ${b.bgColor}; color: ${b.textColor}; word-break: break-word;">${escHtml(b.text)}</div>
