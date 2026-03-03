@@ -140,9 +140,9 @@ header h1 { font-size: 15px; font-weight: 700; letter-spacing: -0.3px; color: va
 html[data-theme="dark"] .radio-btn.active { background: rgba(0,122,255,0.15); }
 .radio-btn:active { opacity: 0.75; }
 
-.range-row { display: flex; align-items: center; gap: 12px; }
+.range-row { display: flex; align-items: center; gap: 6px; }
 .range-row input[type="range"] { flex: 1; accent-color: var(--accent); }
-.range-val { font-size: 13px; color: var(--accent); font-weight: 700; min-width: 36px; text-align: right; }
+.range-val { font-size: 13px; color: var(--accent); font-weight: 700; min-width: 28px; text-align: right; }
 
 .color-row { display: flex; align-items: center; gap: 10px; }
 .color-row input[type="color"] {
@@ -396,8 +396,8 @@ html[data-theme="dark"] .modal textarea { color: #7af0a0; }
         <div class="settings-card-title">📏 전체 폰트 크기</div>
         <div class="field">
           <div class="range-row">
-            <input type="range" id="g-fs-slider" min="10" max="24" step="0.5" value="14.5">
-            <span class="range-val" id="g-fs-val">14.5px</span>
+            <input type="range" id="g-fs-slider" min="10" max="24" step="0.5" value="14">
+            <span class="range-val" id="g-fs-val">14px</span>
           </div>
         </div>
         <button class="btn" style="font-size:13px;padding:11px;" onclick="applyGlobalFontSize()">✓ 모든 버블에 크기 적용</button>
@@ -450,10 +450,10 @@ html[data-theme="dark"] .modal textarea { color: #7af0a0; }
 
 <script>
 let bubbles = [
-  { id: uid(), type: 'sent',  sender: '나',    time: '2024-03-01 10:30 AM', text: '안녕하세요! 이것은 보낸 메세지입니다.', bgColor: '#007aff', textColor: '#ffffff', fontSize: 14.5 },
-  { id: uid(), type: 'recv',  sender: '상대방', time: '2024-03-01 10:31 AM', text: '안녕하세요! 이것은 받은 메세지입니다.', bgColor: '#e5e5ea', textColor: '#000000', fontSize: 14.5 },
-  { id: uid(), type: 'sent',  sender: '나',    time: '2024-03-01 10:32 AM', text: '오늘 날씨가 정말 좋네요!', bgColor: '#007aff', textColor: '#ffffff', fontSize: 14.5 },
-  { id: uid(), type: 'recv',  sender: '상대방', time: '2024-03-01 10:33 AM', text: '네, 정말 그렇네요. 산책하기 좋은 날씨입니다.', bgColor: '#e5e5ea', textColor: '#000000', fontSize: 14.5 },
+  { id: uid(), type: 'sent',  sender: '나',    time: '2024-03-01 10:30 AM', text: '안녕하세요! 이것은 보낸 메세지입니다.', bgColor: '#007aff', textColor: '#ffffff', fontSize: 14 },
+  { id: uid(), type: 'recv',  sender: '상대방', time: '2024-03-01 10:31 AM', text: '안녕하세요! 이것은 받은 메세지입니다.', bgColor: '#e5e5ea', textColor: '#000000', fontSize: 14 },
+  { id: uid(), type: 'sent',  sender: '나',    time: '2024-03-01 10:32 AM', text: '오늘 날씨가 정말 좋네요!', bgColor: '#007aff', textColor: '#ffffff', fontSize: 14 },
+  { id: uid(), type: 'recv',  sender: '상대방', time: '2024-03-01 10:33 AM', text: '네, 정말 그렇네요. 산책하기 좋은 날씨입니다.', bgColor: '#e5e5ea', textColor: '#000000', fontSize: 14 },
 ];
 
 let selectedId  = null;
@@ -543,7 +543,7 @@ function addBubble(type) {
     text: type === 'sent' ? '보낸 메세지를 입력하세요.' : '받은 메세지를 입력하세요.',
     bgColor:   document.getElementById(type === 'sent' ? 'g-sent-bg' : 'g-recv-bg').value,
     textColor: document.getElementById(type === 'sent' ? 'g-sent-tc' : 'g-recv-tc').value,
-    fontSize: 14.5
+    fontSize: 14
   };
   bubbles.push(b);
   render();
