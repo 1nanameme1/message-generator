@@ -474,6 +474,7 @@ function setAlignment(mode) {
   alignment = mode;
   document.getElementById('align-lr').classList.toggle('active', mode === 'lr');
   document.getElementById('align-center').classList.toggle('active', mode === 'center');
+  const ms = document.getElementById('margin-setting');
   ms.style.display = mode === 'lr' ? '' : 'none';
   renderPreview();
 }
