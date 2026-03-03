@@ -354,6 +354,13 @@ html[data-theme="dark"] .modal textarea { color: #7af0a0; }
             <div class="radio-btn" id="align-center" onclick="setAlignment('center')">↕ 가운데 정렬</div>
           </div>
         </div>
+        <div id="margin-setting" class="field">
+          <label>좌우 간격 (클수록 좌우 정렬에 가까워짐)</label>
+          <div class="range-row">
+            <input type="range" id="margin-slider" min="0" max="45" step="5" value="0" oninput="setGap(this.value)">
+            <span class="range-val" id="margin-val">0%</span>
+          </div>
+        </div>
       </div>
 
       <!-- 보낸 버블 색 일괄 설정 -->
