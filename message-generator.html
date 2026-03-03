@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>메시지 버블 생성기</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+:root {
+  --nav-h: 64px;
+  --header-h: 52px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --accent: #007aff;
+  --accent2: #ff3b30;
+  --radius: 12px;
+  --tr: background-color 0.25s, color 0.25s, border-color 0.25s, box-shadow 0.25s;
+  --bg: #f2f2f7;
+  --surface: #ffffff;
+  --surface2: #f8f8fb;
+  --border: #e0e0e8;
+  --text: #1c1c1e;
+  --text-muted: #8e8e93;
+  --shadow: 0 1px 4px rgba(0,0,0,0.07);
+}
+html[data-theme="dark"] {
+  --bg: #0f0f13;
+  --surface: #1a1a24;
+  --surface2: #22222f;
+  --border: #2e2e3f;
+  --text: #e8e8f0;
+  --text-muted: #888899;
+  --shadow: none;
+}
+
+html, body { height: 100%; overflow: hidden; }
+html { background-color: var(--bg); transition: var(--tr); }
+body {
+  font-family: 'Noto Sans KR', sans-serif;
+  background-color: var(--bg); color: var(--text);
+  display: flex; flex-direction: column; transition: var(--tr);
+}
+
+/* ── HEADER ── */
+header {
+  height: var(--header-h); padding: 0 16px;
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0; z-index: 10; box-shadow: var(--shadow); transition: var(--tr);
+}
+.header-left { display: flex; align-items: center; gap: 10px; }
+header h1 { font-size: 15px; font-weight: 700; letter-spacing: -0.3px; color: var(--text); }
+.logo-icon {
+  width: 26px; height: 26px; background: var(--accent); border-radius: 7px;
+  display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0;
+}
+.header-actions { display: flex; gap: 6px; align-items: center; }
+.theme-toggle {
+  width: 32px; height: 32px; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--surface2);
+  color: var(--text); font-size: 15px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: var(--tr); -webkit-appearance: none; flex-shrink: 0;
+}
+.theme-toggle:active { opacity: 0.7; }
+.hbtn {
+  height: 32px; padding: 0 12px; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--surface2);
+  color: var(--text); font-family: inherit; font-size: 11px; font-weight: 500;
+  cursor: pointer; display: flex; align-items: center; gap: 5px;
+  white-space: nowrap; -webkit-appearance: none; transition: var(--tr);
+}
+.hbtn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.hbtn:active { opacity: 0.75; }
+
+/* ── LAYOUT ── */
+.main { flex: 1; overflow: hidden; position: relative; background-color: var(--bg); transition: var(--tr); }
+
+.tab-pane {
+  position: absolute; inset: 0;
+  bottom: calc(var(--nav-h) + var(--safe-bottom));
+  overflow-y: auto; -webkit-overflow-scrolling: touch;
+  display: none; flex-direction: column;
+  background-color: var(--bg); transition: var(--tr);
+}
+.tab-pane.active { display: flex; }
+.tab-pane::-webkit-scrollbar { display: none; }
+
+.bottom-nav {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  height: calc(var(--nav-h) + var(--safe-bottom));
+  padding-bottom: var(--safe-bottom);
+  background: var(--surface); border-top: 1px solid var(--border);
+  display: flex; z-index: 20; transition: var(--tr);
+}
+.nav-btn {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 3px; border: none; background: none;
+  color: var(--text-muted); font-family: inherit; font-size: 10px;
+  font-weight: 500; cursor: pointer; padding: 0;
+}
+.nav-btn.active { color: var(--accent); }
+.nav-icon { font-size: 19px; line-height: 1; display: block; }
+
+/* ── SHARED COMPONENTS ── */
+.btn {
+  flex: 1; padding: 12px; border-radius: 10px;
+  border: 1px solid var(--border); background: var(--surface);
+  color: var(--text); font-family: inherit; font-size: 13px; font-weight: 500;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  gap: 6px; -webkit-appearance: none; transition: var(--tr); box-shadow: var(--shadow);
+}
+.btn:active { opacity: 0.7; }
+.btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; box-shadow: none; }
+
+.field { display: flex; flex-direction: column; gap: 7px; }
+.field label { font-size: 12px; color: var(--text-muted); font-weight: 500; }
+.field input[type="text"], .field textarea {
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: 10px; color: var(--text); font-family: inherit; font-size: 16px;
+  padding: 11px 13px; outline: none; width: 100%;
+  -webkit-appearance: none; resize: vertical; box-shadow: var(--shadow); transition: var(--tr);
+}
+.field textarea { min-height: 80px; }
+.field input:focus, .field textarea:focus { border-color: var(--accent); }
+
+.radio-group { display: flex; gap: 8px; }
+.radio-btn {
+  flex: 1; padding: 10px 8px; border-radius: 10px; border: 1.5px solid var(--border);
+  background: var(--surface); color: var(--text-muted); font-family: inherit;
+  font-size: 12px; font-weight: 500; cursor: pointer; text-align: center;
+  -webkit-appearance: none; box-shadow: var(--shadow); transition: var(--tr);
+  display: flex; align-items: center; justify-content: center; gap: 5px;
+}
+.radio-btn.active { border-color: var(--accent); background: #e8f0fe; color: var(--accent); }
+html[data-theme="dark"] .radio-btn.active { background: rgba(0,122,255,0.15); }
+.radio-btn:active { opacity: 0.75; }
+
+.range-row { display: flex; align-items: center; gap: 12px; }
+.range-row input[type="range"] { flex: 1; accent-color: var(--accent); }
+.range-val { font-size: 13px; color: var(--accent); font-weight: 700; min-width: 44px; text-align: right; }
+
+.color-row { display: flex; align-items: center; gap: 10px; }
+.color-row input[type="color"] {
+  width: 44px; height: 44px; border: 1.5px solid var(--border); border-radius: 10px;
+  cursor: pointer; padding: 3px; background: var(--surface);
+  -webkit-appearance: none; flex-shrink: 0;
+}
+.color-hex {
+  flex: 1; background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: 10px; color: var(--text); font-family: 'Courier New', monospace;
+  font-size: 16px; padding: 11px 12px; outline: none; text-transform: uppercase;
+  -webkit-appearance: none; box-shadow: var(--shadow); transition: var(--tr);
+}
+.color-hex:focus { border-color: var(--accent); }
+
+.divider { height: 1px; background: var(--border); flex-shrink: 0; }
+
+.section-label {
+  font-size: 11px; font-weight: 600; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 1px;
+}
+
+.del-btn-full {
+  width: 100%; padding: 13px; border-radius: 10px;
+  border: 1.5px solid rgba(255,59,48,0.35); background: rgba(255,59,48,0.06);
+  color: var(--accent2); font-family: inherit; font-size: 14px; font-weight: 500;
+  cursor: pointer; -webkit-appearance: none;
+}
+.del-btn-full:active { opacity: 0.7; }
+
+/* ── LIST TAB ── */
+#tab-list { padding: 12px; gap: 0; }
+.add-bar { display: flex; gap: 8px; margin-bottom: 12px; }
+#bubbleListContainer { display: flex; flex-direction: column; gap: 8px; }
+
+.bubble-item {
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: var(--radius); padding: 12px; cursor: pointer;
+  position: relative; display: flex; align-items: flex-start; gap: 10px;
+  box-shadow: var(--shadow); transition: var(--tr);
+}
+.bubble-item.selected { border-color: var(--accent); }
+.bubble-item:active { opacity: 0.8; }
+.bubble-reorder { display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }
+.reorder-btn {
+  background: none; border: none; color: var(--text-muted);
+  cursor: pointer; font-size: 13px; line-height: 1; padding: 3px 4px; border-radius: 4px;
+}
+.reorder-btn:active { color: var(--accent); }
+.bubble-info { flex: 1; min-width: 0; }
+.bubble-item-header { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; }
+.bubble-item-sender {
+  font-size: 12px; font-weight: 600; color: var(--text-muted);
+  flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.bubble-item-type { font-size: 10px; padding: 2px 7px; border-radius: 20px; font-weight: 500; flex-shrink: 0; }
+html[data-theme="light"] .type-sent { background: #e8f0fe; color: #1a73e8; }
+html[data-theme="light"] .type-recv { background: #f1f3f4; color: #5f6368; }
+html[data-theme="dark"]  .type-sent { background: #1a2a4a; color: #6ab0ff; }
+html[data-theme="dark"]  .type-recv { background: #2a2a3a; color: #aaa; }
+.bubble-item-text { font-size: 12px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bubble-del-btn {
+  background: none; border: none; color: var(--text-muted);
+  cursor: pointer; font-size: 16px; padding: 4px 6px; border-radius: 6px;
+  flex-shrink: 0; line-height: 1;
+}
+.bubble-del-btn:active { color: var(--accent2); }
+
+/* ── SETTINGS TAB ── */
+#tab-settings { padding: 16px; gap: 16px; }
+
+.settings-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px;
+  display: flex; flex-direction: column; gap: 14px;
+  box-shadow: var(--shadow); transition: var(--tr);
+}
+.settings-card-title {
+  font-size: 13px; font-weight: 700; color: var(--text);
+  display: flex; align-items: center; gap: 7px;
+}
+
+.color-pair-row {
+  display: flex; gap: 10px; align-items: stretch;
+}
+.color-pair-col {
+  flex: 1; display: flex; flex-direction: column; gap: 6px;
+}
+.color-pair-col label { font-size: 11px; color: var(--text-muted); font-weight: 500; text-align: center; }
+.color-pair-col input[type="color"] {
+  width: 100%; height: 44px; border: 1.5px solid var(--border); border-radius: 10px;
+  cursor: pointer; padding: 3px; background: var(--surface); -webkit-appearance: none;
+}
+.color-pair-col .color-hex {
+  width: 100%; padding: 8px 10px; font-size: 13px;
+}
+
+/* ── EDITOR TAB ── */
+#tab-editor { padding: 16px; gap: 16px; }
+.editor-empty {
+  color: var(--text-muted); font-size: 13px; text-align: center;
+  margin-top: 60px; line-height: 1.8;
+}
+
+/* ── PREVIEW TAB ── */
+#tab-preview { padding: 20px 12px; align-items: center; }
+#chat-preview { width: 100%; max-width: 480px; }
+
+/* ── MODAL ── */
+.modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.5); z-index: 100;
+  align-items: flex-end; justify-content: center;
+}
+.modal-overlay.show { display: flex; }
+.modal {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 20px 20px 0 0;
+  padding: 20px 18px; padding-bottom: calc(20px + var(--safe-bottom));
+  width: 100%; max-height: 80vh;
+  display: flex; flex-direction: column; gap: 14px;
+  animation: slideUp 0.25s ease; transition: var(--tr);
+}
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.modal-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto -4px; }
+.modal h3 { font-size: 15px; font-weight: 700; color: var(--text); }
+.modal textarea {
+  flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
+  color: #16a34a; font-family: 'Courier New', monospace; font-size: 12px;
+  padding: 14px; outline: none; resize: none; min-height: 200px;
+  -webkit-appearance: none; -webkit-overflow-scrolling: touch;
+}
+html[data-theme="dark"] .modal textarea { color: #7af0a0; }
+.modal-btns { display: flex; gap: 8px; }
+.modal-btns .btn { font-size: 14px; padding: 13px; }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed; top: calc(var(--header-h) + 12px); left: 50%;
+  transform: translateX(-50%); background: var(--accent); color: #fff;
+  font-size: 13px; font-weight: 500; padding: 10px 20px;
+  border-radius: 30px; z-index: 200; opacity: 0; pointer-events: none;
+  transition: opacity 0.2s; white-space: nowrap;
+  box-shadow: 0 4px 16px rgba(0,122,255,0.3);
+}
+.toast.show { opacity: 1; }
+
+/* ── DESKTOP ── */
+@media (min-width: 768px) {
+  .bottom-nav { display: none; }
+  .main { display: flex; background-color: var(--bg); }
+  .tab-pane {
+    position: static; display: flex !important;
+    overflow-y: auto; height: 100%; bottom: auto; background-color: var(--bg);
+  }
+  #tab-list { width: 280px; flex-shrink: 0; border-right: 1px solid var(--border); }
+  #tab-settings { width: 300px; flex-shrink: 0; border-right: 1px solid var(--border); }
+  #tab-editor { width: 280px; flex-shrink: 0; border-right: 1px solid var(--border); }
+  #tab-preview { flex: 1; }
+
+  .modal-overlay.show { align-items: center; }
+  .modal { border-radius: 16px; max-width: 560px; padding-bottom: 20px; }
+
+  .bubble-del-btn { opacity: 0; }
+  .bubble-item:hover .bubble-del-btn { opacity: 1; }
+  .bubble-item:hover { border-color: var(--accent); }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="logo-icon">💬</div>
+    <h1>메시지 버블 생성기</h1>
+  </div>
+  <div class="header-actions">
+    <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()" title="다크/라이트 모드 전환">🌙</button>
+    <button class="hbtn" onclick="openCodeModal()">🔗 HTML</button>
+    <button class="hbtn primary" onclick="exportImage()">🖼 저장</button>
+  </div>
+</header>
+
+<div class="main">
+
+  <!-- 목록 탭 -->
+  <div class="tab-pane active" id="tab-list">
+    <div style="padding:12px; display:flex; flex-direction:column; gap:8px;">
+      <div class="add-bar">
+        <button class="btn" onclick="addBubble('sent')">➕ 보낸</button>
+        <button class="btn" onclick="addBubble('recv')">➕ 받은</button>
+      </div>
+      <div id="bubbleListContainer"></div>
+      <div style="height:16px;flex-shrink:0"></div>
+    </div>
+  </div>
+
+  <!-- 설정 탭 -->
+  <div class="tab-pane" id="tab-settings">
+    <div style="padding:16px;display:flex;flex-direction:column;gap:16px;">
+
+      <!-- 정렬 방식 -->
+      <div class="settings-card">
+        <div class="settings-card-title">↔ 정렬 방식</div>
+        <div class="field">
+          <label>버블 정렬</label>
+          <div class="radio-group">
+            <div class="radio-btn active" id="align-lr" onclick="setAlignment('lr')">↔ 좌우 정렬</div>
+            <div class="radio-btn" id="align-center" onclick="setAlignment('center')">↕ 가운데 정렬</div>
+          </div>
+        </div>
+        <div id="margin-setting" class="field">
+          <label>좌우 여백 (버블 최대 너비)</label>
+          <div class="range-row">
+            <input type="range" id="margin-slider" min="40" max="90" step="5" value="70" oninput="setMaxWidth(this.value)">
+            <span class="range-val" id="margin-val">70%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 보낸 버블 색 일괄 설정 -->
+      <div class="settings-card">
+        <div class="settings-card-title">🔵 보낸 버블 색상</div>
+        <div class="color-pair-row">
+          <div class="color-pair-col">
+            <label>배경색</label>
+            <input type="color" id="g-sent-bg" value="#007aff">
+            <input class="color-hex" id="g-sent-bg-hex" type="text" value="#007AFF" maxlength="7">
+          </div>
+          <div class="color-pair-col">
+            <label>텍스트색</label>
+            <input type="color" id="g-sent-tc" value="#ffffff">
+            <input class="color-hex" id="g-sent-tc-hex" type="text" value="#FFFFFF" maxlength="7">
+          </div>
+        </div>
+        <button class="btn" style="font-size:13px;padding:11px;" onclick="applyGlobalColors('sent')">✓ 보낸 버블 모두 적용</button>
+      </div>
+
+      <!-- 받은 버블 색 일괄 설정 -->
+      <div class="settings-card">
+        <div class="settings-card-title">⚪ 받은 버블 색상</div>
+        <div class="color-pair-row">
+          <div class="color-pair-col">
+            <label>배경색</label>
+            <input type="color" id="g-recv-bg" value="#e5e5ea">
+            <input class="color-hex" id="g-recv-bg-hex" type="text" value="#E5E5EA" maxlength="7">
+          </div>
+          <div class="color-pair-col">
+            <label>텍스트색</label>
+            <input type="color" id="g-recv-tc" value="#000000">
+            <input class="color-hex" id="g-recv-tc-hex" type="text" value="#000000" maxlength="7">
+          </div>
+        </div>
+        <button class="btn" style="font-size:13px;padding:11px;" onclick="applyGlobalColors('recv')">✓ 받은 버블 모두 적용</button>
+      </div>
+
+      <div style="height:8px;flex-shrink:0"></div>
+    </div>
+  </div>
+
+  <!-- 편집 탭 -->
+  <div class="tab-pane" id="tab-editor">
+    <p class="editor-empty">버블을 선택하거나<br>목록에서 새로 추가하세요</p>
+  </div>
+
+  <!-- 미리보기 탭 -->
+  <div class="tab-pane" id="tab-preview">
+    <div id="chat-preview"></div>
+  </div>
+
+</div>
+
+<nav class="bottom-nav">
+  <button class="nav-btn active" id="nav-list" onclick="switchTab('list')">
+    <span class="nav-icon">☰</span>목록
+  </button>
+  <button class="nav-btn" id="nav-settings" onclick="switchTab('settings')">
+    <span class="nav-icon">⚙️</span>설정
+  </button>
+  <button class="nav-btn" id="nav-editor" onclick="switchTab('editor')">
+    <span class="nav-icon">✏️</span>편집
+  </button>
+  <button class="nav-btn" id="nav-preview" onclick="switchTab('preview')">
+    <span class="nav-icon">👁</span>미리보기
+  </button>
+</nav>
+
+<div class="modal-overlay" id="codeModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h3>📋 HTML 코드</h3>
+    <textarea id="codeOutput" readonly></textarea>
+    <div class="modal-btns">
+      <button class="btn" onclick="copyCode()">📋 복사하기</button>
+      <button class="btn btn-primary" onclick="closeCodeModal()">닫기</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let bubbles = [
+  { id: uid(), type: 'sent',  sender: '나',    time: '2024-03-01 10:30 AM', text: '안녕하세요! 이것은 보낸 메시지입니다.', bgColor: '#007aff', textColor: '#ffffff', fontSize: 14.2 },
+  { id: uid(), type: 'recv',  sender: '상대방', time: '2024-03-01 10:31 AM', text: '안녕하세요! 이것은 받은 메시지입니다.', bgColor: '#e5e5ea', textColor: '#000000', fontSize: 14.2 },
+  { id: uid(), type: 'sent',  sender: '나',    time: '2024-03-01 10:32 AM', text: '오늘 날씨가 정말 좋네요!', bgColor: '#007aff', textColor: '#ffffff', fontSize: 14.2 },
+  { id: uid(), type: 'recv',  sender: '상대방', time: '2024-03-01 10:33 AM', text: '네, 정말 그렇네요. 산책하기 좋은 날씨입니다.', bgColor: '#e5e5ea', textColor: '#000000', fontSize: 14.2 },
+];
+
+let selectedId  = null;
+let currentTab  = 'list';
+let isDark      = false;
+let alignment   = 'lr';
+let bubbleMaxW  = 70;
+
+function uid() { return Math.random().toString(36).slice(2); }
+
+/* ── THEME ── */
+function toggleTheme() {
+  isDark = !isDark;
+  document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+  document.getElementById('themeBtn').textContent = isDark ? '☀️' : '🌙';
+}
+
+/* ── TABS ── */
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  document.getElementById('nav-' + tab).classList.add('active');
+}
+
+/* ── ALIGNMENT ── */
+function setAlignment(mode) {
+  alignment = mode;
+  document.getElementById('align-lr').classList.toggle('active', mode === 'lr');
+  document.getElementById('align-center').classList.toggle('active', mode === 'center');
+  const ms = document.getElementById('margin-setting');
+  ms.style.display = mode === 'lr' ? '' : 'none';
+  renderPreview();
+}
+
+function setMaxWidth(val) {
+  bubbleMaxW = parseInt(val);
+  document.getElementById('margin-val').textContent = val + '%';
+  renderPreview();
+}
+
+/* ── GLOBAL COLORS ── */
+function setupGlobalColorSync(pickId, hexId) {
+  const pick = document.getElementById(pickId);
+  const hex  = document.getElementById(hexId);
+  if (!pick || !hex) return;
+  pick.addEventListener('input', () => { hex.value = pick.value.toUpperCase(); });
+  hex.addEventListener('input', () => {
+    const v = hex.value.trim();
+    if (/^#[0-9a-fA-F]{6}$/.test(v)) pick.value = v;
+  });
+}
+
+function applyGlobalColors(type) {
+  const bgPick = document.getElementById(type === 'sent' ? 'g-sent-bg' : 'g-recv-bg');
+  const tcPick = document.getElementById(type === 'sent' ? 'g-sent-tc' : 'g-recv-tc');
+  const bgVal = bgPick.value;
+  const tcVal = tcPick.value;
+  bubbles.forEach(b => {
+    if (b.type === type) { b.bgColor = bgVal; b.textColor = tcVal; }
+  });
+  renderPreview();
+  renderList();
+  if (selectedId && getBubble(selectedId)?.type === type) renderEditor();
+  showToast(`✓ ${type === 'sent' ? '보낸' : '받은'} 버블 색상 일괄 적용됨`);
+}
+
+/* ── BUBBLE CRUD ── */
+function addBubble(type) {
+  const b = {
+    id: uid(), type,
+    sender: type === 'sent' ? '나' : '상대방',
+    time: formatNow(),
+    text: type === 'sent' ? '보낸 메시지를 입력하세요.' : '받은 메시지를 입력하세요.',
+    bgColor:   document.getElementById(type === 'sent' ? 'g-sent-bg' : 'g-recv-bg').value,
+    textColor: document.getElementById(type === 'sent' ? 'g-sent-tc' : 'g-recv-tc').value,
+    fontSize: 14.2
+  };
+  bubbles.push(b);
+  render();
+  selectBubble(b.id);
+  if (window.innerWidth < 768) switchTab('editor');
+}
+
+function deleteBubble(id, e) {
+  if (e) e.stopPropagation();
+  bubbles = bubbles.filter(b => b.id !== id);
+  if (selectedId === id) {
+    selectedId = null;
+    if (window.innerWidth < 768) switchTab('list');
+  }
+  render();
+  showToast('🗑 버블 삭제됨');
+}
+
+function moveBubble(id, dir, e) {
+  if (e) e.stopPropagation();
+  const idx = bubbles.findIndex(b => b.id === id);
+  const ni = idx + dir;
+  if (ni < 0 || ni >= bubbles.length) return;
+  [bubbles[idx], bubbles[ni]] = [bubbles[ni], bubbles[idx]];
+  render();
+}
+
+function selectBubble(id) { selectedId = id; renderList(); renderEditor(); }
+function getBubble(id) { return bubbles.find(b => b.id === id); }
+
+function updateBubble(id, key, val) {
+  const b = getBubble(id);
+  if (b) { b[key] = val; renderPreview(); renderList(); }
+}
+
+function formatNow() {
+  const d = new Date();
+  const h = d.getHours(), m = d.getMinutes();
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const hh = h % 12 || 12;
+  const mm = String(m).padStart(2, '0');
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${hh}:${mm} ${ampm}`;
+}
+
+/* ── RENDER ── */
+function render() { renderList(); renderEditor(); renderPreview(); }
+
+function renderList() {
+  const container = document.getElementById('bubbleListContainer');
+  container.innerHTML = '';
+  if (bubbles.length === 0) {
+    container.innerHTML = '<p style="color:var(--text-muted);font-size:13px;text-align:center;margin-top:24px;line-height:1.8">버블을 추가해보세요 ✨</p>';
+    return;
+  }
+  bubbles.forEach(b => {
+    const div = document.createElement('div');
+    div.className = 'bubble-item' + (b.id === selectedId ? ' selected' : '');
+    div.innerHTML = `
+      <div class="bubble-reorder">
+        <button class="reorder-btn" onclick="moveBubble('${b.id}',-1,event)">▲</button>
+        <button class="reorder-btn" onclick="moveBubble('${b.id}',1,event)">▼</button>
+      </div>
+      <div class="bubble-info" onclick="onBubbleClick('${b.id}')">
+        <div class="bubble-item-header">
+          <span class="bubble-item-sender">${escHtml(b.sender)}</span>
+          <span class="bubble-item-type ${b.type==='sent'?'type-sent':'type-recv'}">${b.type==='sent'?'보낸':'받은'}</span>
+        </div>
+        <div class="bubble-item-text">${escHtml(b.text)}</div>
+      </div>
+      <button class="bubble-del-btn" onclick="deleteBubble('${b.id}',event)" title="삭제">✕</button>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function onBubbleClick(id) {
+  selectBubble(id);
+  if (window.innerWidth < 768) switchTab('editor');
+}
+
+function renderEditor() {
+  const panel = document.getElementById('tab-editor');
+  const b = selectedId ? getBubble(selectedId) : null;
+  if (!b) {
+    panel.innerHTML = '<p class="editor-empty">버블을 선택하거나<br>목록에서 새로 추가하세요</p>';
+    return;
+  }
+  panel.innerHTML = `
+    <p class="section-label">${b.type==='sent'?'보낸':'받은'} 메시지 편집</p>
+
+    <div class="field">
+      <label>메시지 내용</label>
+      <textarea id="e-text" rows="3">${escHtml(b.text)}</textarea>
+    </div>
+    <div class="field">
+      <label>보낸 사람</label>
+      <input type="text" id="e-sender" value="${escHtml(b.sender)}">
+    </div>
+    <div class="field">
+      <label>시간</label>
+      <input type="text" id="e-time" value="${escHtml(b.time)}">
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="field">
+      <label>말풍선 유형</label>
+      <div class="radio-group">
+        <div class="radio-btn ${b.type==='sent'?'active':''}" onclick="changeType('sent')">보낸 메시지</div>
+        <div class="radio-btn ${b.type==='recv'?'active':''}" onclick="changeType('recv')">받은 메시지</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>폰트 크기</label>
+      <div class="range-row">
+        <input type="range" id="e-fs" min="10" max="24" step="0.5" value="${b.fontSize}">
+        <span class="range-val" id="fs-val">${b.fontSize}px</span>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="field">
+      <label>배경 색상 (이 버블만)</label>
+      <div class="color-row">
+        <input type="color" id="e-bg" value="${b.bgColor}">
+        <input class="color-hex" id="e-bg-hex" type="text" value="${b.bgColor.toUpperCase()}" maxlength="7">
+      </div>
+    </div>
+    <div class="field">
+      <label>텍스트 색상 (이 버블만)</label>
+      <div class="color-row">
+        <input type="color" id="e-tc" value="${b.textColor}">
+        <input class="color-hex" id="e-tc-hex" type="text" value="${b.textColor.toUpperCase()}" maxlength="7">
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <button class="del-btn-full" onclick="deleteBubble('${b.id}')">🗑 이 버블 삭제</button>
+    <div style="height:8px;flex-shrink:0"></div>
+  `;
+
+  const wireInput = (elId, key) => {
+    const el = document.getElementById(elId);
+    if (el) el.addEventListener('input', () => updateBubble(selectedId, key, el.value));
+  };
+  wireInput('e-text', 'text');
+  wireInput('e-sender', 'sender');
+  wireInput('e-time', 'time');
+
+  const fsEl = document.getElementById('e-fs');
+  fsEl.addEventListener('input', () => {
+    const v = parseFloat(fsEl.value);
+    document.getElementById('fs-val').textContent = v + 'px';
+    updateBubble(selectedId, 'fontSize', v);
+  });
+
+  syncBubbleColor('e-bg', 'e-bg-hex', 'bgColor');
+  syncBubbleColor('e-tc', 'e-tc-hex', 'textColor');
+}
+
+function syncBubbleColor(pickId, hexId, key) {
+  const pick = document.getElementById(pickId);
+  const hex  = document.getElementById(hexId);
+  if (!pick || !hex) return;
+  pick.addEventListener('input', () => { hex.value = pick.value.toUpperCase(); updateBubble(selectedId, key, pick.value); });
+  hex.addEventListener('input', () => {
+    const v = hex.value.trim();
+    if (/^#[0-9a-fA-F]{6}$/.test(v)) { pick.value = v; updateBubble(selectedId, key, v); }
+  });
+}
+
+function changeType(type) {
+  if (!selectedId) return;
+  getBubble(selectedId).type = type;
+  renderPreview(); renderEditor(); renderList();
+}
+
+/* ── PREVIEW ── */
+function renderPreview() {
+  document.getElementById('chat-preview').innerHTML = bubbles.map(bubbleToHtml).join('');
+}
+
+function bubbleToHtml(b) {
+  const isSent = b.type === 'sent';
+  const mw = bubbleMaxW + '%';
+
+  if (alignment === 'center') {
+    const br = isSent
+      ? 'border-radius:18px;border-bottom-right-radius:0;'
+      : 'border-radius:18px;border-bottom-left-radius:0;';
+    return `<div style="margin-bottom:10px;text-align:center;">
+  <div style="font-size:10.5px;color:#888;margin-bottom:5px;">${escHtml(b.time)}</div>
+  <div style="display:inline-block;max-width:${mw};text-align:left;">
+    <div style="padding:10px 15px;${br}font-size:${b.fontSize}px;background:${b.bgColor};color:${b.textColor};word-break:break-word;">${escHtml(b.text)}</div>
+    <div style="font-size:10.5px;color:#888;margin-top:2px;">${escHtml(b.sender)}</div>
+  </div>
+</div>`;
+  }
+
+  const align = isSent ? 'right' : 'left';
+  const br = isSent
+    ? 'border-radius:18px;border-bottom-right-radius:0;'
+    : 'border-radius:18px;border-bottom-left-radius:0;';
+  return `<div style="margin-bottom:10px;text-align:${align};">
+  <div style="font-size:10.5px;color:#888;margin-bottom:5px;">${escHtml(b.time)}</div>
+  <div style="display:inline-block;max-width:${mw};text-align:left;">
+    <div style="padding:10px 15px;${br}font-size:${b.fontSize}px;background:${b.bgColor};color:${b.textColor};word-break:break-word;">${escHtml(b.text)}</div>
+    <div style="font-size:10.5px;color:#888;margin-top:2px;text-align:${align};">${escHtml(b.sender)}</div>
+  </div>
+</div>`;
+}
+
+/* ── CODE MODAL ── */
+function openCodeModal() {
+  const html = bubbles.map(b => {
+    const isSent = b.type === 'sent';
+    const mw = bubbleMaxW + '%';
+    if (alignment === 'center') {
+      const br = isSent
+        ? 'border-radius: 18px; border-bottom-right-radius: 0;'
+        : 'border-radius: 18px; border-bottom-left-radius: 0;';
+      return `<div style="margin-bottom: 10px; text-align: center;">
+    <div style="font-size: 10.5px; color: #888; margin-bottom: 5px;">${escHtml(b.time)}</div>
+    <div style="display: inline-block; max-width: ${mw}; text-align: left;">
+        <div style="padding: 10px 15px; ${br} font-size: ${b.fontSize}px; background: ${b.bgColor}; color: ${b.textColor}; word-break: break-word;">${escHtml(b.text)}</div>
+        <div style="font-size: 10.5px; color: #888; margin-top: 2px;">${escHtml(b.sender)}</div>
+    </div>
+</div>`;
+    }
+    const align = isSent ? 'right' : 'left';
+    const br = isSent
+      ? 'border-radius: 18px; border-bottom-right-radius: 0;'
+      : 'border-radius: 18px; border-bottom-left-radius: 0;';
+    return `<div style="margin-bottom: 10px; text-align: ${align};">
+    <div style="font-size: 10.5px; color: #888; margin-bottom: 5px;">${escHtml(b.time)}</div>
+    <div style="display: inline-block; max-width: ${mw}; text-align: left;">
+        <div style="padding: 10px 15px; ${br} font-size: ${b.fontSize}px; background: ${b.bgColor}; color: ${b.textColor}; word-break: break-word;">${escHtml(b.text)}</div>
+        <div style="font-size: 10.5px; color: #888; margin-top: 2px; text-align: ${align};">${escHtml(b.sender)}</div>
+    </div>
+</div>`;
+  }).join('\n\n');
+  document.getElementById('codeOutput').value = html;
+  document.getElementById('codeModal').classList.add('show');
+}
+
+function closeCodeModal() { document.getElementById('codeModal').classList.remove('show'); }
+
+function copyCode() {
+  navigator.clipboard.writeText(document.getElementById('codeOutput').value)
+    .then(() => showToast('✅ 클립보드에 복사됨!'));
+}
+
+/* ── IMAGE EXPORT ── */
+function exportImage() {
+  const el = document.getElementById('chat-preview');
+  const prevBg  = el.style.backgroundColor;
+  const prevPad = el.style.padding;
+  el.style.backgroundColor = '#ffffff';
+  el.style.padding = '20px';
+  showToast('⏳ 이미지 생성 중...');
+  html2canvas(el, { backgroundColor: '#ffffff', scale: 2, useCORS: true }).then(canvas => {
+    el.style.backgroundColor = prevBg;
+    el.style.padding = prevPad;
+    const link = document.createElement('a');
+    link.download = 'messages.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    showToast('🖼 이미지 저장됨!');
+  });
+}
+
+/* ── TOAST ── */
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+/* ── UTILS ── */
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ── SWIPE ── */
+let touchStartX = 0;
+document.querySelector('.main').addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+document.querySelector('.main').addEventListener('touchend', e => {
+  if (window.innerWidth >= 768) return;
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  if (Math.abs(dx) < 60) return;
+  const tabs = ['list','settings','editor','preview'];
+  const ci = tabs.indexOf(currentTab);
+  if (dx < 0 && ci < tabs.length-1) switchTab(tabs[ci+1]);
+  else if (dx > 0 && ci > 0) switchTab(tabs[ci-1]);
+}, { passive: true });
+
+document.getElementById('codeModal').addEventListener('click', function(e) {
+  if (e.target === this) closeCodeModal();
+});
+
+/* ── INIT ── */
+setupGlobalColorSync('g-sent-bg', 'g-sent-bg-hex');
+setupGlobalColorSync('g-sent-tc', 'g-sent-tc-hex');
+setupGlobalColorSync('g-recv-bg', 'g-recv-bg-hex');
+setupGlobalColorSync('g-recv-tc', 'g-recv-tc-hex');
+
+render();
+</script>
+</body>
+</html>
