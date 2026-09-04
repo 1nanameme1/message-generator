@@ -386,7 +386,7 @@ html[data-theme="dark"] .modal textarea { color: #7af0a0; }
       <div class="add-bar">
         <button class="btn" onclick="addBubble('sent')">➕ 보낸</button>
         <button class="btn" onclick="addBubble('recv')">➕ 받은</button>
-        <button class="btn" onclick="addDateSeparator()">➕ 날짜선</button>
+        <button class="btn" onclick="addDateSeparator()">➕ 날짜</button>
       </div>
       <div class="add-bar">
         <button class="btn" onclick="openBulkAddModal()">📥 일괄 추가</button>
@@ -749,7 +749,7 @@ function renderList() {
     if (b.type === 'date') {
       div.className = 'bubble-item' + (b.id === selectedId && !multiSelectMode ? ' selected' : '') + (isMultiSel ? ' multi-selected' : '');
       div.innerHTML = `${multiSelectMode ? `<div class=\"bubble-checkbox-wrap\"><input type=\"checkbox\" class=\"bubble-checkbox\" ${isMultiSel ? 'checked' : ''} onclick=\"event.stopPropagation(); onBubbleClick('${b.id}')\"></div>` : `<div class=\"bubble-reorder\"><button class=\"reorder-btn\" onclick=\"moveBubble('${b.id}',-1,event)\">▲</button><button class=\"reorder-btn\" onclick=\"moveBubble('${b.id}',1,event)\">▼</button></div>`}
-        <div class=\"bubble-info\" onclick=\"onBubbleClick('${b.id}')\"><div class=\"bubble-item-header\"><span class=\"bubble-item-sender\">날짜선</span><span class=\"bubble-item-type type-date\">날짜</span></div><div class=\"bubble-item-text\">${escHtml(b.text)}</div></div>
+        <div class=\"bubble-info\" onclick=\"onBubbleClick('${b.id}')\"><div class=\"bubble-item-header\"><span class=\"bubble-item-sender\">날짜</span><span class=\"bubble-item-type type-date\">날짜</span></div><div class=\"bubble-item-text\">${escHtml(b.text)}</div></div>
         ${multiSelectMode ? '' : `<button class=\"bubble-del-btn\" onclick=\"deleteBubble('${b.id}',event)\" title=\"삭제\">✕</button>`}`;
       container.appendChild(div);
       setupDragItem(div, b.id);
@@ -987,13 +987,13 @@ function renderEditor() {
   }
   if (b.type === 'date') {
     panel.innerHTML = `
-      <p class="section-label">날짜선 편집</p>
+      <p class="section-label">날짜 편집</p>
       <div class="field">
         <label>날짜 표시</label>
         <input type="text" id="e-date-text" value="${escHtml(b.text)}">
       </div>
       <div class="divider"></div>
-      <button class="del-btn-full" onclick="deleteBubble('${b.id}')">🗑 이 날짜선 삭제</button>
+      <button class="del-btn-full" onclick="deleteBubble('${b.id}')">🗑 이 날짜 삭제</button>
       <div style="height:8px;flex-shrink:0"></div>
     `;
     document.getElementById('e-date-text').addEventListener('input', () => updateBubble(selectedId, 'text', document.getElementById('e-date-text').value));
