@@ -269,9 +269,7 @@ html[data-theme="dark"] .modal textarea.input-textarea { color: var(--text); }
 }
 
 /* ── DATE SEPARATOR ── */
-.date-separator { display:flex; align-items:center; gap:10px; margin:14px 0 12px; color:#8e8e93; font-size:10.5px; line-height:1; white-space:nowrap; }
-.date-separator::before,.date-separator::after { content:''; flex:1; height:1px; background:#d1d1d6; }
-html[data-theme="dark"] .date-separator::before,html[data-theme="dark"] .date-separator::after { background:#3a3a45; }
+.date-separator { text-align:center; margin:14px 0 12px; color:#8e8e93; font-size:10.5px; line-height:1; }
 
 /* ── PREVIEW TAB ── */
 #tab-preview { padding: 20px 12px; align-items: center; }
@@ -335,6 +333,15 @@ html[data-theme="dark"] .modal textarea { color: #7af0a0; }
 .preview-editable-date:focus {
   box-shadow: 0 0 0 2px var(--accent);
 }
+.preview-editable-meta {
+  cursor: text;
+  outline: none;
+  border-radius: 4px;
+  padding: 1px 3px;
+}
+.preview-editable-meta:focus {
+  box-shadow: 0 0 0 2px var(--accent);
+}
 
 /* ── DESKTOP ── */
 @media (min-width: 768px) {
@@ -386,7 +393,7 @@ html[data-theme="dark"] .modal textarea { color: #7af0a0; }
       <div class="add-bar">
         <button class="btn" onclick="addBubble('sent')">➕ 보낸</button>
         <button class="btn" onclick="addBubble('recv')">➕ 받은</button>
-        <button class="btn" onclick="addDateSeparator()">➕ 날짜</button>
+        <button class="btn" onclick="addDateSeparator()">➕ 날짜선</button>
       </div>
       <div class="add-bar">
         <button class="btn" onclick="openBulkAddModal()">📥 일괄 추가</button>
@@ -749,7 +756,7 @@ function renderList() {
     if (b.type === 'date') {
       div.className = 'bubble-item' + (b.id === selectedId && !multiSelectMode ? ' selected' : '') + (isMultiSel ? ' multi-selected' : '');
       div.innerHTML = `${multiSelectMode ? `<div class=\"bubble-checkbox-wrap\"><input type=\"checkbox\" class=\"bubble-checkbox\" ${isMultiSel ? 'checked' : ''} onclick=\"event.stopPropagation(); onBubbleClick('${b.id}')\"></div>` : `<div class=\"bubble-reorder\"><button class=\"reorder-btn\" onclick=\"moveBubble('${b.id}',-1,event)\">▲</button><button class=\"reorder-btn\" onclick=\"moveBubble('${b.id}',1,event)\">▼</button></div>`}
-        <div class=\"bubble-info\" onclick=\"onBubbleClick('${b.id}')\"><div class=\"bubble-item-header\"><span class=\"bubble-item-sender\">날짜</span><span class=\"bubble-item-type type-date\">날짜</span></div><div class=\"bubble-item-text\">${escHtml(b.text)}</div></div>
+        <div class=\"bubble-info\" onclick=\"onBubbleClick('${b.id}')\"><div class=\"bubble-item-header\"><span class=\"bubble-item-sender\">날짜선</span><span class=\"bubble-item-type type-date\">날짜</span></div><div class=\"bubble-item-text\">${escHtml(b.text)}</div></div>
         ${multiSelectMode ? '' : `<button class=\"bubble-del-btn\" onclick=\"deleteBubble('${b.id}',event)\" title=\"삭제\">✕</button>`}`;
       container.appendChild(div);
       setupDragItem(div, b.id);
@@ -987,13 +994,13 @@ function renderEditor() {
   }
   if (b.type === 'date') {
     panel.innerHTML = `
-      <p class="section-label">날짜 편집</p>
+      <p class="section-label">날짜선 편집</p>
       <div class="field">
         <label>날짜 표시</label>
         <input type="text" id="e-date-text" value="${escHtml(b.text)}">
       </div>
       <div class="divider"></div>
-      <button class="del-btn-full" onclick="deleteBubble('${b.id}')">🗑 이 날짜 삭제</button>
+      <button class="del-btn-full" onclick="deleteBubble('${b.id}')">🗑 이 날짜선 삭제</button>
       <div style="height:8px;flex-shrink:0"></div>
     `;
     document.getElementById('e-date-text').addEventListener('input', () => updateBubble(selectedId, 'text', document.getElementById('e-date-text').value));
@@ -1114,7 +1121,7 @@ function dateSeparatorHtml(b, previousDate) {
   return {html:`<div class="date-separator">${escHtml(formatDateSeparator(date))}</div>`, date};
 }
 function dateSeparatorInlineHtmlText(text) {
-  return `<div style=\"display:flex;align-items:center;gap:10px;margin:14px 0 12px;color:#8e8e93;font-size:10.5px;line-height:1;white-space:nowrap;\"><span style=\"flex:1;height:1px;background:#d1d1d6;\"></span><span>${escHtml(text)}</span><span style=\"flex:1;height:1px;background:#d1d1d6;\"></span></div>`;
+  return `<div style=\"text-align:center;margin:14px 0 12px;color:#8e8e93;font-size:10.5px;line-height:1;\">${escHtml(text)}</div>`;
 }
 
 function dateSeparatorInlineHtml(b, previousDate) {
@@ -1176,6 +1183,27 @@ function renderPreview() {
       }
     });
   });
+  preview.querySelectorAll('.preview-editable-meta').forEach(el => {
+    el.addEventListener('click', e => {
+      e.stopPropagation();
+      selectedId = el.dataset.bubbleId;
+      renderList();
+      el.focus();
+    });
+
+    el.addEventListener('input', () => {
+      const b = getBubble(el.dataset.bubbleId);
+      if (!b) return;
+      b[el.dataset.field] = el.innerText.replace(/\r/g, '').replace(/\n/g, '');
+      renderList();
+    });
+
+    el.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+      }
+    });
+  });
 }
 
 function bubbleToHtml(b) {
@@ -1186,11 +1214,11 @@ function bubbleToHtml(b) {
       ? 'border-radius:18px;border-bottom-right-radius:0;'
       : 'border-radius:18px;border-bottom-left-radius:0;';
     return `<div style="margin-bottom:15px; text-align:center;">
-  <div style="font-size:10.5px; color:#888; margin-bottom:5px;">${escHtml(b.time)}</div>
+  <div class="preview-editable-meta" data-bubble-id="${b.id}" data-field="time" contenteditable="true" spellcheck="false" style="font-size:10.5px; color:#888; margin-bottom:5px;">${escHtml(b.time)}</div>
   <div style="display:inline-block; max-width:85%; text-align:center;">
     <div class="preview-editable-bubble" data-bubble-id="${b.id}" contenteditable="true" spellcheck="false"
       style="display:inline-block; padding:10px 15px; ${br} font-size:${b.fontSize}px; background:${b.bgColor}; color:${b.textColor}; word-break:break-word; text-align:left;">${escHtml(b.text)}</div>
-    <div style="font-size:10.5px; color:#888; margin-top:4px; text-align:center;">${escHtml(b.sender)}</div>
+    <div class="preview-editable-meta" data-bubble-id="${b.id}" data-field="sender" contenteditable="true" spellcheck="false" style="font-size:10.5px; color:#888; margin-top:4px; text-align:center;">${escHtml(b.sender)}</div>
   </div>
 </div>`;
   }
@@ -1203,11 +1231,11 @@ function bubbleToHtml(b) {
     ? 'border-radius:18px;border-bottom-right-radius:0;'
     : 'border-radius:18px;border-bottom-left-radius:0;';
   return `<div style="margin-bottom:10px;padding-left:${leftPadding}%;padding-right:${rightPadding}%;text-align:${align};">
-  <div style="font-size:10.5px;color:#888;margin-bottom:5px;">${escHtml(b.time)}</div>
+  <div class="preview-editable-meta" data-bubble-id="${b.id}" data-field="time" contenteditable="true" spellcheck="false" style="font-size:10.5px;color:#888;margin-bottom:5px;">${escHtml(b.time)}</div>
   <div style="display:inline-block;max-width:75%;text-align:left;">
     <div class="preview-editable-bubble" data-bubble-id="${b.id}" contenteditable="true" spellcheck="false"
       style="padding:10px 15px;${br}font-size:${b.fontSize}px;background:${b.bgColor};color:${b.textColor};word-break:break-word;">${escHtml(b.text)}</div>
-    <div style="font-size:10.5px;color:#888;margin-top:2px;text-align:${align};">${escHtml(b.sender)}</div>
+    <div class="preview-editable-meta" data-bubble-id="${b.id}" data-field="sender" contenteditable="true" spellcheck="false" style="font-size:10.5px;color:#888;margin-top:2px;text-align:${align};">${escHtml(b.sender)}</div>
   </div>
 </div>`;
 }
