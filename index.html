@@ -1,14 +1,1325 @@
-<div style="text-align: center; display: flex; flex-direction: column; padding-top:20px; align-items: center; height: 100vh;">
-  뭔가 고치고 추가하는 중이라 잠시 내려뒀습니다<br>
-  챈 안접었음 간간이 눈팅만 하는중입니다<br>
-  고닉으로 돌아가고 싶은데 포인트도 없는 상태임<br>
-  정 필요하시다면 레포지토리 통해 코드 받아가셔도 상관 없습니다. (업뎃 후 구버전 코드 삭제 예정)<br>
-  다만 가져가셔서 크레딧 없이 무단 배포 등의 행위를 해도 된다는 뜻은 아니니 자제해주시기 바랍니다<br>
-  애초에 1부터 10까지 바이브코딩으로 만들어진 거라 그럴만한 것도 아닌 건 압니다만은...<br>
-  <div style="padding: 10px; margin: 20px; border: 2px solid black;">
-    <h1>추가 예정:</h1>
-    (모듈용) 복붙 포함 일괄 추가 기능<br>버블 클릭으로 편집 기능<br>여러 버블 선택 기능 등
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>💬간단 메세지 생성기</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+:root {
+  --nav-h: 64px;
+  --header-h: 52px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --accent: #007aff;
+  --accent2: #ff3b30;
+  --radius: 12px;
+  --tr: background-color 0.25s, color 0.25s, border-color 0.25s, box-shadow 0.25s;
+  --bg: #f2f2f7;
+  --surface: #ffffff;
+  --surface2: #f8f8fb;
+  --border: #e0e0e8;
+  --text: #1c1c1e;
+  --text-muted: #8e8e93;
+  --shadow: 0 1px 4px rgba(0,0,0,0.07);
+}
+html[data-theme="dark"] {
+  --bg: #0f0f13;
+  --surface: #1a1a24;
+  --surface2: #22222f;
+  --border: #2e2e3f;
+  --text: #e8e8f0;
+  --text-muted: #888899;
+  --shadow: none;
+}
+
+html, body { height: 100%; overflow: hidden; }
+html { background-color: var(--bg); transition: var(--tr); }
+body {
+  font-family: 'Noto Sans KR', sans-serif;
+  background-color: var(--bg); color: var(--text);
+  display: flex; flex-direction: column; transition: var(--tr);
+}
+
+/* ── HEADER ── */
+header {
+  height: var(--header-h); padding: 0 16px;
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0; z-index: 10; box-shadow: var(--shadow); transition: var(--tr);
+}
+.header-left { display: flex; align-items: center; gap: 10px; }
+header h1 { font-size: 15px; font-weight: 700; letter-spacing: -0.3px; color: var(--text); }
+.logo-icon {
+  width: 26px; height: 26px; background: var(--accent); border-radius: 7px;
+  display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0;
+}
+.header-actions { display: flex; gap: 6px; align-items: center; }
+.theme-toggle {
+  width: 32px; height: 32px; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--surface2);
+  color: var(--text); font-size: 15px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: var(--tr); -webkit-appearance: none; flex-shrink: 0;
+}
+.theme-toggle:active { opacity: 0.7; }
+.hbtn {
+  height: 32px; padding: 0 12px; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--surface2);
+  color: var(--text); font-family: inherit; font-size: 11px; font-weight: 500;
+  cursor: pointer; display: flex; align-items: center; gap: 5px;
+  white-space: nowrap; -webkit-appearance: none; transition: var(--tr);
+}
+.hbtn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.hbtn:active { opacity: 0.75; }
+
+/* ── LAYOUT ── */
+.main { flex: 1; overflow: hidden; position: relative; background-color: var(--bg); transition: var(--tr); }
+
+.tab-pane {
+  position: absolute; inset: 0;
+  bottom: calc(var(--nav-h) + var(--safe-bottom));
+  overflow-y: auto; -webkit-overflow-scrolling: touch;
+  display: none; flex-direction: column;
+  background-color: var(--bg); transition: var(--tr);
+}
+.tab-pane.active { display: flex; }
+.tab-pane::-webkit-scrollbar { display: none; }
+
+.bottom-nav {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  height: calc(var(--nav-h) + var(--safe-bottom));
+  padding-bottom: var(--safe-bottom);
+  background: var(--surface); border-top: 1px solid var(--border);
+  display: flex; z-index: 20; transition: var(--tr);
+}
+.nav-btn {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 3px; border: none; background: none;
+  color: var(--text-muted); font-family: inherit; font-size: 10px;
+  font-weight: 500; cursor: pointer; padding: 0;
+}
+.nav-btn.active { color: var(--accent); }
+.nav-icon { font-size: 19px; line-height: 1; display: block; }
+
+/* ── SHARED COMPONENTS ── */
+.btn {
+  flex: 1; padding: 12px; border-radius: 10px;
+  border: 1px solid var(--border); background: var(--surface);
+  color: var(--text); font-family: inherit; font-size: 13px; font-weight: 500;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  gap: 6px; -webkit-appearance: none; transition: var(--tr); box-shadow: var(--shadow);
+}
+.btn:active { opacity: 0.7; }
+.btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; box-shadow: none; }
+
+.field { display: flex; flex-direction: column; gap: 7px; }
+.field label { font-size: 12px; color: var(--text-muted); font-weight: 500; }
+.field input[type="text"], .field textarea {
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: 10px; color: var(--text); font-family: inherit; font-size: 16px;
+  padding: 11px 13px; outline: none; width: 100%;
+  -webkit-appearance: none; resize: vertical; box-shadow: var(--shadow); transition: var(--tr);
+}
+.field textarea { min-height: 80px; }
+.field input:focus, .field textarea:focus { border-color: var(--accent); }
+
+.radio-group { display: flex; gap: 8px; }
+.radio-btn {
+  flex: 1; padding: 10px 8px; border-radius: 10px; border: 1.5px solid var(--border);
+  background: var(--surface); color: var(--text-muted); font-family: inherit;
+  font-size: 12px; font-weight: 500; cursor: pointer; text-align: center;
+  -webkit-appearance: none; box-shadow: var(--shadow); transition: var(--tr);
+  display: flex; align-items: center; justify-content: center; gap: 5px;
+}
+.radio-btn.active { border-color: var(--accent); background: #e8f0fe; color: var(--accent); }
+html[data-theme="dark"] .radio-btn.active { background: rgba(0,122,255,0.15); }
+.radio-btn:active { opacity: 0.75; }
+
+.range-row { display: flex; align-items: center; gap: 6px; }
+.range-row input[type="range"] { flex: 1; accent-color: var(--accent); }
+.range-val { font-size: 13px; color: var(--accent); font-weight: 700; min-width: 28px; text-align: right; }
+
+.color-row { display: flex; align-items: center; gap: 10px; }
+.color-row input[type="color"] {
+  width: 44px; height: 44px; border: 1.5px solid var(--border); border-radius: 10px;
+  cursor: pointer; padding: 3px; background: var(--surface);
+  -webkit-appearance: none; flex-shrink: 0;
+}
+.color-hex {
+  flex: 1; background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: 10px; color: var(--text); font-family: 'Courier New', monospace;
+  font-size: 16px; padding: 11px 12px; outline: none; text-transform: uppercase;
+  -webkit-appearance: none; box-shadow: var(--shadow); transition: var(--tr);
+}
+.color-hex:focus { border-color: var(--accent); }
+
+.divider { height: 1px; background: var(--border); flex-shrink: 0; }
+
+.section-label {
+  font-size: 11px; font-weight: 600; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 1px;
+}
+
+.del-btn-full {
+  width: 100%; padding: 13px; border-radius: 10px;
+  border: 1.5px solid rgba(255,59,48,0.35); background: rgba(255,59,48,0.06);
+  color: var(--accent2); font-family: inherit; font-size: 14px; font-weight: 500;
+  cursor: pointer; -webkit-appearance: none;
+}
+.del-btn-full:active { opacity: 0.7; }
+
+/* ── LIST TAB ── */
+#tab-list { padding: 12px; gap: 0; }
+.add-bar { display: flex; gap: 8px; margin-bottom: 12px; }
+#bubbleListContainer { display: flex; flex-direction: column; gap: 8px; }
+
+.bubble-item {
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: var(--radius); padding: 12px; cursor: pointer;
+  position: relative; display: flex; align-items: flex-start; gap: 10px;
+  box-shadow: var(--shadow); transition: var(--tr);
+}
+.bubble-item.selected { border-color: var(--accent); }
+.bubble-item:active { opacity: 0.8; }
+.bubble-item.dragging { opacity: 0.45; }
+.bubble-item.drag-over { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(0,122,255,0.15); }
+.bubble-reorder { display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }
+.reorder-btn {
+  background: none; border: none; color: var(--text-muted);
+  cursor: pointer; font-size: 13px; line-height: 1; padding: 3px 4px; border-radius: 4px;
+}
+.reorder-btn:active { color: var(--accent); }
+.bubble-info { flex: 1; min-width: 0; }
+.bubble-item-header { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; }
+.bubble-item-sender {
+  font-size: 12px; font-weight: 600; color: var(--text-muted);
+  flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.bubble-item-type { font-size: 10px; padding: 2px 7px; border-radius: 20px; font-weight: 500; flex-shrink: 0; }
+html[data-theme="light"] .type-sent { background: #e8f0fe; color: #1a73e8; }
+html[data-theme="light"] .type-recv { background: #f1f3f4; color: #5f6368; }
+html[data-theme="dark"]  .type-sent { background: #1a2a4a; color: #6ab0ff; }
+html[data-theme="dark"]  .type-recv { background: #2a2a3a; color: #aaa; }
+.bubble-item-text { font-size: 12px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bubble-del-btn {
+  background: none; border: none; color: var(--text-muted);
+  cursor: pointer; font-size: 16px; padding: 4px 6px; border-radius: 6px;
+  flex-shrink: 0; line-height: 1;
+}
+.bubble-del-btn:active { color: var(--accent2); }
+
+.bubble-checkbox-wrap { display: flex; align-items: center; justify-content: center; flex-shrink: 0; align-self: center; padding: 2px; }
+.bubble-checkbox { width: 20px; height: 20px; accent-color: var(--accent); cursor: pointer; }
+.bubble-item.multi-selected { border-color: var(--accent); background: #e8f0fe; }
+html[data-theme="dark"] .bubble-item.multi-selected { background: rgba(0,122,255,0.12); }
+
+.selection-toolbar {
+  display: none; align-items: center; gap: 10px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 8px 10px; margin-bottom: 4px;
+  flex-wrap: wrap; transition: var(--tr);
+}
+.select-all-label { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text); cursor: pointer; white-space: nowrap; }
+.select-all-label input { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; }
+.selection-count { font-size: 12px; color: var(--text-muted); flex: 1; }
+.selection-actions { display: flex; gap: 6px; }
+
+.modal textarea.input-textarea { color: var(--text); font-family: 'Noto Sans KR', sans-serif; font-size: 14px; min-height: 140px; }
+html[data-theme="dark"] .modal textarea.input-textarea { color: var(--text); }
+
+/* ── SETTINGS TAB ── */
+#tab-settings { padding: 16px; gap: 16px; }
+
+.settings-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px;
+  display: flex; flex-direction: column; gap: 14px;
+  box-shadow: var(--shadow); transition: var(--tr);
+}
+.settings-card-title {
+  font-size: 13px; font-weight: 700; color: var(--text);
+  display: flex; align-items: center; gap: 7px;
+}
+
+.color-pair-row {
+  display: flex; gap: 10px; align-items: stretch;
+}
+.color-pair-col {
+  flex: 1; display: flex; flex-direction: column; gap: 6px;
+}
+.color-pair-col label { font-size: 11px; color: var(--text-muted); font-weight: 500; text-align: center; }
+.color-pair-col input[type="color"] {
+  width: 100%; height: 44px; border: 1.5px solid var(--border); border-radius: 10px;
+  cursor: pointer; padding: 3px; background: var(--surface); -webkit-appearance: none;
+}
+.color-pair-col .color-hex {
+  width: 100%; padding: 8px 10px; font-size: 13px;
+}
+
+/* ── EDITOR TAB ── */
+#tab-editor { padding: 16px; gap: 16px; }
+.editor-empty {
+  color: var(--text-muted); font-size: 13px; text-align: center;
+  margin-top: 60px; line-height: 1.8;
+}
+
+/* ── DATE SEPARATOR ── */
+.date-separator { display:flex; align-items:center; gap:10px; margin:14px 0 12px; color:#8e8e93; font-size:10.5px; line-height:1; white-space:nowrap; }
+.date-separator::before,.date-separator::after { content:''; flex:1; height:1px; background:#d1d1d6; }
+html[data-theme="dark"] .date-separator::before,html[data-theme="dark"] .date-separator::after { background:#3a3a45; }
+
+/* ── PREVIEW TAB ── */
+#tab-preview { padding: 20px 12px; align-items: center; }
+#chat-preview { width: 100%; max-width: 480px; }
+
+/* ── MODAL ── */
+.modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.5); z-index: 100;
+  align-items: flex-end; justify-content: center;
+}
+.modal-overlay.show { display: flex; }
+.modal {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 20px 20px 0 0;
+  padding: 20px 18px; padding-bottom: calc(20px + var(--safe-bottom));
+  width: 100%; max-height: 80vh;
+  display: flex; flex-direction: column; gap: 14px;
+  animation: slideUp 0.25s ease; transition: var(--tr);
+}
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.modal-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto -4px; }
+.modal h3 { font-size: 15px; font-weight: 700; color: var(--text); }
+.modal textarea {
+  flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
+  color: #16a34a; font-family: 'Courier New', monospace; font-size: 12px;
+  padding: 14px; outline: none; resize: none; min-height: 200px;
+  -webkit-appearance: none; -webkit-overflow-scrolling: touch;
+}
+html[data-theme="dark"] .modal textarea { color: #7af0a0; }
+.modal-btns { display: flex; gap: 8px; }
+.modal-btns .btn { font-size: 14px; padding: 13px; }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed; top: calc(var(--header-h) + 12px); left: 50%;
+  transform: translateX(-50%); background: var(--accent); color: #fff;
+  font-size: 13px; font-weight: 500; padding: 10px 20px;
+  border-radius: 30px; z-index: 200; opacity: 0; pointer-events: none;
+  transition: opacity 0.2s; white-space: nowrap;
+  box-shadow: 0 4px 16px rgba(0,122,255,0.3);
+}
+.toast.show { opacity: 1; }
+
+
+/* ── PREVIEW BUBBLE INLINE EDIT ── */
+.preview-editable-bubble {
+  cursor: text;
+  outline: none;
+  border-radius: inherit;
+}
+.preview-editable-bubble:focus {
+  box-shadow: 0 0 0 2px var(--accent);
+}
+.preview-editable-date {
+  cursor: text;
+  outline: none;
+  border-radius: 4px;
+  padding: 2px 4px;
+}
+.preview-editable-date:focus {
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+/* ── DESKTOP ── */
+@media (min-width: 768px) {
+  .bottom-nav { display: none; }
+  .main { display: flex; background-color: var(--bg); }
+  .tab-pane {
+    position: static; display: flex !important;
+    overflow-y: auto; height: 100%; bottom: auto; background-color: var(--bg);
+  }
+  #tab-list { width: 280px; flex-shrink: 0; border-right: 1px solid var(--border); }
+  #tab-settings { width: 300px; flex-shrink: 0; border-right: 1px solid var(--border); }
+  #tab-editor { width: 280px; flex-shrink: 0; border-right: 1px solid var(--border); }
+  #tab-preview { flex: 1; }
+
+  .modal-overlay.show { align-items: center; }
+  .modal { border-radius: 16px; max-width: 560px; padding-bottom: 20px; }
+
+  /* 일괄 추가 창: 하단 버튼까지 모달 내부에 포함 */
+  #bulkAddModal .modal { overflow-y: auto; }
+  #bulkAddModal .modal-btns { flex-shrink: 0; }
+
+  .bubble-del-btn { opacity: 0; }
+  .bubble-item:hover .bubble-del-btn { opacity: 1; }
+  .bubble-item:hover { border-color: var(--accent); }
+}
+
+  .bubble-item-type.type-date { background: var(--accent); color: #fff; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="logo-icon">💬</div>
+    <h1>간단 메세지 생성기</h1>
   </div>
-  쓰는 사람이 있는지는 모르겠지만<br>
-  있다면 항상 감사합니다.<br>
+  <div class="header-actions">
+    <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()" title="다크/라이트 모드 전환">🌙</button>
+    <button class="hbtn" onclick="openCodeModal()">🔗 HTML</button>
+    <button class="hbtn primary" onclick="exportImage()">🖼 저장</button>
+  </div>
+</header>
+
+<div class="main">
+
+  <!-- 목록 탭 -->
+  <div class="tab-pane active" id="tab-list">
+    <div style="padding:12px; display:flex; flex-direction:column; gap:8px;">
+      <div class="add-bar">
+        <button class="btn" onclick="addBubble('sent')">➕ 보낸</button>
+        <button class="btn" onclick="addBubble('recv')">➕ 받은</button>
+        <button class="btn" onclick="addDateSeparator()">➕ 날짜선</button>
+      </div>
+      <div class="add-bar">
+        <button class="btn" onclick="openBulkAddModal()">📥 일괄 추가</button>
+        <button class="btn" id="selectModeBtn" onclick="toggleMultiSelectMode()">☑ 선택</button>
+      </div>
+      <div class="selection-toolbar" id="selectionToolbar">
+        <label class="select-all-label">
+          <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()">전체선택
+        </label>
+        <span class="selection-count" id="selectionCount">0개 선택됨</span>
+        <div class="selection-actions">
+          <button class="hbtn" onclick="openBulkColorModal()">🎨 색상</button>
+          <button class="hbtn" onclick="deleteSelectedBubbles()">🗑 삭제</button>
+        </div>
+      </div>
+      <div id="bubbleListContainer"></div>
+      <div style="height:16px;flex-shrink:0"></div>
+    </div>
+  </div>
+
+  <!-- 설정 탭 -->
+  <div class="tab-pane" id="tab-settings">
+    <div style="padding:16px;display:flex;flex-direction:column;gap:16px;">
+
+      <!-- 정렬 방식 -->
+      <div class="settings-card">
+        <div class="settings-card-title">↔ 정렬 방식</div>
+        <div class="field">
+          <label>버블 정렬</label>
+          <div class="radio-group">
+            <div class="radio-btn active" id="align-lr" onclick="setAlignment('lr')">↔ 좌우 정렬</div>
+            <div class="radio-btn" id="align-center" onclick="setAlignment('center')">↕ 가운데 정렬</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 보낸 버블 색 일괄 설정 -->
+      <div class="settings-card">
+        <div class="settings-card-title">🔵 보낸 버블 색상</div>
+        <div class="color-pair-row">
+          <div class="color-pair-col">
+            <label>배경색</label>
+            <input type="color" id="g-sent-bg" value="#007aff">
+            <input class="color-hex" id="g-sent-bg-hex" type="text" value="#007AFF" maxlength="7">
+          </div>
+          <div class="color-pair-col">
+            <label>텍스트색</label>
+            <input type="color" id="g-sent-tc" value="#ffffff">
+            <input class="color-hex" id="g-sent-tc-hex" type="text" value="#FFFFFF" maxlength="7">
+          </div>
+        </div>
+        <button class="btn" style="font-size:13px;padding:11px;" onclick="applyGlobalColors('sent')">✓ 보낸 버블 모두 적용</button>
+      </div>
+
+      <!-- 받은 버블 색 일괄 설정 -->
+      <div class="settings-card">
+        <div class="settings-card-title">⚪ 받은 버블 색상</div>
+        <div class="color-pair-row">
+          <div class="color-pair-col">
+            <label>배경색</label>
+            <input type="color" id="g-recv-bg" value="#e5e5ea">
+            <input class="color-hex" id="g-recv-bg-hex" type="text" value="#E5E5EA" maxlength="7">
+          </div>
+          <div class="color-pair-col">
+            <label>텍스트색</label>
+            <input type="color" id="g-recv-tc" value="#000000">
+            <input class="color-hex" id="g-recv-tc-hex" type="text" value="#000000" maxlength="7">
+          </div>
+        </div>
+        <button class="btn" style="font-size:13px;padding:11px;" onclick="applyGlobalColors('recv')">✓ 받은 버블 모두 적용</button>
+      </div>
+
+      <div class="settings-card">
+        <div class="settings-card-title">📏 전체 폰트 크기</div>
+        <div class="field">
+          <div class="range-row">
+            <input type="range" id="g-fs-slider" min="10" max="24" step="0.5" value="14">
+            <span class="range-val" id="g-fs-val">14px</span>
+          </div>
+        </div>
+        <button class="btn" style="font-size:13px;padding:11px;" onclick="applyGlobalFontSize()">✓ 모든 버블에 크기 적용</button>
+      </div>
+
+      <div style="height:8px;flex-shrink:0"></div>
+    </div>
+  </div>
+
+  <!-- 편집 탭 -->
+  <div class="tab-pane" id="tab-editor">
+    <p class="editor-empty">버블을 선택하거나<br>목록에서 새로 추가하세요</p>
+  </div>
+
+  <!-- 미리보기 탭 -->
+  <div class="tab-pane" id="tab-preview">
+    <div id="chat-preview"></div>
+  </div>
+
 </div>
+
+<nav class="bottom-nav">
+  <button class="nav-btn active" id="nav-list" onclick="switchTab('list')">
+    <span class="nav-icon">☰</span>목록
+  </button>
+  <button class="nav-btn" id="nav-settings" onclick="switchTab('settings')">
+    <span class="nav-icon">⚙️</span>설정
+  </button>
+  <button class="nav-btn" id="nav-editor" onclick="switchTab('editor')">
+    <span class="nav-icon">✏️</span>편집
+  </button>
+  <button class="nav-btn" id="nav-preview" onclick="switchTab('preview')">
+    <span class="nav-icon">👁</span>미리보기
+  </button>
+</nav>
+
+<div class="modal-overlay" id="codeModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h3>📋 HTML 코드</h3>
+    <textarea id="codeOutput" readonly></textarea>
+    <div class="modal-btns">
+      <button class="btn" onclick="copyCode()">📋 복사하기</button>
+      <button class="btn btn-primary" onclick="closeCodeModal()">닫기</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="bulkAddModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h3>📥 말풍선 일괄 추가</h3>
+    <div class="field">
+      <label>말풍선 유형</label>
+      <div class="radio-group" id="bulkAutoGroup">
+        <div class="radio-btn active" data-mode="auto" onclick="setBulkMode('auto')">🔍 채팅 로그 자동 인식</div>
+      </div>
+      <div class="radio-group" id="bulkTypeGroup" style="margin-top:8px;">
+        <div class="radio-btn" data-mode="sent" onclick="setBulkMode('sent')">전부 보낸</div>
+        <div class="radio-btn" data-mode="recv" onclick="setBulkMode('recv')">전부 받은</div>
+      </div>
+      <div class="radio-group" id="bulkAltGroup" style="margin-top:8px;">
+        <div class="radio-btn" data-mode="alt-recv" onclick="setBulkMode('alt-recv')">↔ 번갈아(받은부터)</div>
+        <div class="radio-btn" data-mode="alt-sent" onclick="setBulkMode('alt-sent')">↔ 번갈아(보낸부터)</div>
+      </div>
+    </div>
+    <p class="editor-empty" style="margin:0;font-size:11px;line-height:1.6;text-align:left;color:var(--text-muted);">
+      자동 인식 형식:<br>
+      • message sent by 이름: 내용 시간 → 받은 버블<br>
+      • message from 이름: 내용 시간 → 보낸 버블<br>
+      (시간 형식은 자유 — 오후 8:00 / PM 8:00 / 20:00 등)
+    </p>
+    <div class="field">
+      <label>메세지 (한 줄에 하나씩 입력)</label>
+      <textarea id="bulkAddText" class="input-textarea" rows="8" placeholder="• message sent by A: Hello PM 3:00&#10;• message from B: Yes, Hello PM 3:01"></textarea>
+    </div>
+    <div class="modal-btns">
+      <button class="btn" onclick="closeBulkAddModal()">취소</button>
+      <button class="btn btn-primary" onclick="submitBulkAdd()">➕ 추가하기</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="bulkColorModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h3>🎨 선택한 말풍선 색상 변경</h3>
+    <div class="field">
+      <label>배경색</label>
+      <div class="color-row">
+        <input type="color" id="bulk-bg" value="#007aff">
+        <input class="color-hex" id="bulk-bg-hex" type="text" value="#007AFF" maxlength="7">
+      </div>
+    </div>
+    <div class="field">
+      <label>텍스트 색상</label>
+      <div class="color-row">
+        <input type="color" id="bulk-tc" value="#ffffff">
+        <input class="color-hex" id="bulk-tc-hex" type="text" value="#FFFFFF" maxlength="7">
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn" onclick="closeBulkColorModal()">취소</button>
+      <button class="btn btn-primary" onclick="applyBulkColor()">✓ 적용</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let bubbles = [
+  { id: uid(), type: 'date', text: '2026년 9월 4일 금요일' },
+  { id: uid(), type: 'sent',  sender: '나',    time: '10:30 AM', text: '안녕하세요! 이것은 보낸 메세지입니다.', bgColor: '#007aff', textColor: '#ffffff', fontSize: 14 },
+  { id: uid(), type: 'recv',  sender: '상대방', time: '10:31 AM', text: '안녕하세요! 이것은 받은 메세지입니다.', bgColor: '#e5e5ea', textColor: '#000000', fontSize: 14 },
+  { id: uid(), type: 'sent',  sender: '나',    time: '10:32 AM', text: '오늘 날씨가 정말 좋네요!', bgColor: '#007aff', textColor: '#ffffff', fontSize: 14 },
+  { id: uid(), type: 'recv',  sender: '상대방', time: '10:33 AM', text: '네, 정말 그렇네요. 산책하기 좋은 날씨입니다.', bgColor: '#e5e5ea', textColor: '#000000', fontSize: 14 },
+];
+
+let selectedId  = null;
+let currentTab  = 'list';
+let isDark      = false;
+let alignment   = 'lr';
+let bubbleGap   = 0;
+let multiSelectMode = false;
+let selectedIds = new Set();
+let bulkAddMode = 'auto';
+
+function uid() { return Math.random().toString(36).slice(2); }
+
+/* ── THEME ── */
+function toggleTheme() {
+  isDark = !isDark;
+  document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+  document.getElementById('themeBtn').textContent = isDark ? '☀️' : '🌙';
+}
+
+/* ── TABS ── */
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  document.getElementById('nav-' + tab).classList.add('active');
+}
+
+/* ── ALIGNMENT ── */
+function setAlignment(mode) {
+  alignment = mode;
+  document.getElementById('align-lr').classList.toggle('active', mode === 'lr');
+  document.getElementById('align-center').classList.toggle('active', mode === 'center');
+  renderPreview();
+}
+
+/* ── GLOBAL COLORS ── */
+function setupGlobalColorSync(pickId, hexId) {
+  const pick = document.getElementById(pickId);
+  const hex  = document.getElementById(hexId);
+  if (!pick || !hex) return;
+  pick.addEventListener('input', () => { hex.value = pick.value.toUpperCase(); });
+  hex.addEventListener('input', () => {
+    const v = hex.value.trim();
+    if (/^#[0-9a-fA-F]{6}$/.test(v)) pick.value = v;
+  });
+}
+
+function applyGlobalColors(type) {
+  const bgPick = document.getElementById(type === 'sent' ? 'g-sent-bg' : 'g-recv-bg');
+  const tcPick = document.getElementById(type === 'sent' ? 'g-sent-tc' : 'g-recv-tc');
+  const bgVal = bgPick.value;
+  const tcVal = tcPick.value;
+  bubbles.forEach(b => {
+    if (b.type === type) { b.bgColor = bgVal; b.textColor = tcVal; }
+  });
+  renderPreview();
+  renderList();
+  if (selectedId && getBubble(selectedId)?.type === type) renderEditor();
+  showToast(`✓ ${type === 'sent' ? '보낸' : '받은'} 버블 색상 일괄 적용됨`);
+}
+
+/* ── 폰트 크기 일괄 적용 기능 ── */
+
+// 슬라이더 숫자를 실시간으로 보여주는 이벤트 리스너 (INIT 부분에 추가해도 좋습니다)
+document.getElementById('g-fs-slider').addEventListener('input', function() {
+  document.getElementById('g-fs-val').textContent = this.value + 'px';
+});
+
+function applyGlobalFontSize() {
+  const newSize = parseFloat(document.getElementById('g-fs-slider').value);
+  
+  // 모든 버블의 폰트 크기를 변경
+  bubbles.forEach(b => {
+    b.fontSize = newSize;
+  });
+  
+  // UI 업데이트
+  render(); 
+  showToast(`✓ 모든 버블이 ${newSize}px로 변경됨`);
+}
+  
+/* ── BUBBLE CRUD ── */
+function addBubble(type) {
+  const b = {
+    id: uid(), type,
+    sender: type === 'sent' ? '나' : '상대방',
+    time: formatNow(),
+    text: type === 'sent' ? '보낸 메세지를 입력하세요.' : '받은 메세지를 입력하세요.',
+    bgColor:   document.getElementById(type === 'sent' ? 'g-sent-bg' : 'g-recv-bg').value,
+    textColor: document.getElementById(type === 'sent' ? 'g-sent-tc' : 'g-recv-tc').value,
+    fontSize: 14
+  };
+  bubbles.push(b);
+  render();
+  selectBubble(b.id);
+  if (window.innerWidth < 768) switchTab('editor');
+}
+
+function addDateSeparator() {
+  const d = new Date();
+  const days = ['일','월','화','수','목','금','토'];
+  const b = {
+    id: uid(), type: 'date',
+    text: `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일 ${days[d.getDay()]}요일`
+  };
+  bubbles.push(b);
+  render();
+  selectBubble(b.id);
+  if (window.innerWidth < 768) switchTab('editor');
+}
+
+function deleteBubble(id, e) {
+  if (e) e.stopPropagation();
+  bubbles = bubbles.filter(b => b.id !== id);
+  if (selectedId === id) {
+    selectedId = null;
+    if (window.innerWidth < 768) switchTab('list');
+  }
+  render();
+  showToast('🗑 버블 삭제됨');
+}
+
+function moveBubble(id, dir, e) {
+  if (e) e.stopPropagation();
+  const idx = bubbles.findIndex(b => b.id === id);
+  const ni = idx + dir;
+  if (ni < 0 || ni >= bubbles.length) return;
+  [bubbles[idx], bubbles[ni]] = [bubbles[ni], bubbles[idx]];
+  render();
+}
+
+function selectBubble(id) { selectedId = id; renderList(); renderEditor(); }
+function getBubble(id) { return bubbles.find(b => b.id === id); }
+
+function updateBubble(id, key, val) {
+  const b = getBubble(id);
+  if (b) { b[key] = val; renderPreview(); renderList(); }
+}
+
+function formatNow(d) {
+  d = d || new Date();
+  const h = d.getHours(), m = d.getMinutes();
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const hh = h % 12 || 12;
+  const mm = String(m).padStart(2, '0');
+  return `${hh}:${mm} ${ampm}`;
+}
+
+/* ── RENDER ── */
+function render() { renderList(); renderEditor(); renderPreview(); }
+
+function renderList() {
+  const container = document.getElementById('bubbleListContainer');
+  container.innerHTML = '';
+  if (bubbles.length === 0) {
+    container.innerHTML = '<p style="color:var(--text-muted);font-size:13px;text-align:center;margin-top:24px;line-height:1.8">버블을 추가해보세요 ✨</p>';
+    renderSelectionToolbar();
+    return;
+  }
+  bubbles.forEach(b => {
+    const div = document.createElement('div');
+    const isMultiSel = multiSelectMode && selectedIds.has(b.id);
+    if (b.type === 'date') {
+      div.className = 'bubble-item' + (b.id === selectedId && !multiSelectMode ? ' selected' : '') + (isMultiSel ? ' multi-selected' : '');
+      div.innerHTML = `${multiSelectMode ? `<div class=\"bubble-checkbox-wrap\"><input type=\"checkbox\" class=\"bubble-checkbox\" ${isMultiSel ? 'checked' : ''} onclick=\"event.stopPropagation(); onBubbleClick('${b.id}')\"></div>` : `<div class=\"bubble-reorder\"><button class=\"reorder-btn\" onclick=\"moveBubble('${b.id}',-1,event)\">▲</button><button class=\"reorder-btn\" onclick=\"moveBubble('${b.id}',1,event)\">▼</button></div>`}
+        <div class=\"bubble-info\" onclick=\"onBubbleClick('${b.id}')\"><div class=\"bubble-item-header\"><span class=\"bubble-item-sender\">날짜선</span><span class=\"bubble-item-type type-date\">날짜</span></div><div class=\"bubble-item-text\">${escHtml(b.text)}</div></div>
+        ${multiSelectMode ? '' : `<button class=\"bubble-del-btn\" onclick=\"deleteBubble('${b.id}',event)\" title=\"삭제\">✕</button>`}`;
+      container.appendChild(div);
+      setupDragItem(div, b.id);
+      return;
+    }
+    div.className = 'bubble-item'
+      + (b.id === selectedId && !multiSelectMode ? ' selected' : '')
+      + (isMultiSel ? ' multi-selected' : '');
+
+    const leftControl = multiSelectMode
+      ? `<div class="bubble-checkbox-wrap">
+           <input type="checkbox" class="bubble-checkbox" ${isMultiSel ? 'checked' : ''} onclick="event.stopPropagation(); onBubbleClick('${b.id}')">
+         </div>`
+      : `<div class="bubble-reorder">
+           <button class="reorder-btn" onclick="moveBubble('${b.id}',-1,event)">▲</button>
+           <button class="reorder-btn" onclick="moveBubble('${b.id}',1,event)">▼</button>
+         </div>`;
+
+    div.innerHTML = `
+      ${leftControl}
+      <div class="bubble-info" onclick="onBubbleClick('${b.id}')">
+        <div class="bubble-item-header">
+          <span class="bubble-item-sender">${escHtml(b.sender)}</span>
+          <span class="bubble-item-type ${b.type==='sent'?'type-sent':'type-recv'}">${b.type==='sent'?'보낸':'받은'}</span>
+        </div>
+        <div class="bubble-item-text">${escHtml(b.text)}</div>
+      </div>
+      ${multiSelectMode ? '' : `<button class="bubble-del-btn" onclick="deleteBubble('${b.id}',event)" title="삭제">✕</button>`}
+    `;
+    container.appendChild(div);
+    setupDragItem(div, b.id);
+  });
+  renderSelectionToolbar();
+}
+
+function setupDragItem(el, id) {
+  el.draggable = !multiSelectMode;
+  if (multiSelectMode) return;
+  el.addEventListener('dragstart', e => {
+    e.stopPropagation();
+    el.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', id);
+  });
+  el.addEventListener('dragend', () => {
+    el.classList.remove('dragging');
+    document.querySelectorAll('.bubble-item.drag-over').forEach(x => x.classList.remove('drag-over'));
+  });
+  el.addEventListener('dragover', e => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (el.classList.contains('dragging')) return;
+    document.querySelectorAll('.bubble-item.drag-over').forEach(x => x.classList.remove('drag-over'));
+    el.classList.add('drag-over');
+  });
+  el.addEventListener('dragleave', () => el.classList.remove('drag-over'));
+  el.addEventListener('drop', e => {
+    e.preventDefault();
+    const fromId = e.dataTransfer.getData('text/plain');
+    el.classList.remove('drag-over');
+    if (!fromId || fromId === id) return;
+    const from = bubbles.findIndex(b => b.id === fromId);
+    const to = bubbles.findIndex(b => b.id === id);
+    if (from < 0 || to < 0) return;
+    const [item] = bubbles.splice(from, 1);
+    bubbles.splice(to, 0, item);
+    render();
+  });
+}
+
+function onBubbleClick(id) {
+  if (multiSelectMode) {
+    if (selectedIds.has(id)) selectedIds.delete(id);
+    else selectedIds.add(id);
+    renderList();
+    return;
+  }
+  selectBubble(id);
+  if (window.innerWidth < 768) switchTab('editor');
+}
+
+/* ── 다중 선택 모드 ── */
+function toggleMultiSelectMode() {
+  multiSelectMode = !multiSelectMode;
+  selectedIds.clear();
+  const btn = document.getElementById('selectModeBtn');
+  btn.textContent = multiSelectMode ? '✕ 선택 취소' : '☑ 선택';
+  btn.classList.toggle('btn-primary', multiSelectMode);
+  renderList();
+}
+
+function renderSelectionToolbar() {
+  const toolbar = document.getElementById('selectionToolbar');
+  if (!multiSelectMode) { toolbar.style.display = 'none'; return; }
+  toolbar.style.display = 'flex';
+  document.getElementById('selectionCount').textContent = `${selectedIds.size}개 선택됨`;
+  const allCb = document.getElementById('selectAllCheckbox');
+  allCb.checked = bubbles.length > 0 && selectedIds.size === bubbles.length;
+  allCb.indeterminate = selectedIds.size > 0 && selectedIds.size < bubbles.length;
+}
+
+function toggleSelectAll() {
+  const allCb = document.getElementById('selectAllCheckbox');
+  if (allCb.checked) bubbles.forEach(b => selectedIds.add(b.id));
+  else selectedIds.clear();
+  renderList();
+}
+
+function deleteSelectedBubbles() {
+  if (selectedIds.size === 0) { showToast('선택된 말풍선이 없습니다'); return; }
+  const count = selectedIds.size;
+  bubbles = bubbles.filter(b => !selectedIds.has(b.id));
+  if (selectedId && selectedIds.has(selectedId)) selectedId = null;
+  selectedIds.clear();
+  render();
+  showToast(`🗑 ${count}개 삭제됨`);
+}
+
+function openBulkColorModal() {
+  if (selectedIds.size === 0) { showToast('선택된 말풍선이 없습니다'); return; }
+  document.getElementById('bulkColorModal').classList.add('show');
+}
+function closeBulkColorModal() { document.getElementById('bulkColorModal').classList.remove('show'); }
+
+function applyBulkColor() {
+  const bg = document.getElementById('bulk-bg').value;
+  const tc = document.getElementById('bulk-tc').value;
+  const count = selectedIds.size;
+  bubbles.forEach(b => { if (selectedIds.has(b.id)) { b.bgColor = bg; b.textColor = tc; } });
+  closeBulkColorModal();
+  render();
+  showToast(`✓ ${count}개 색상 변경됨`);
+}
+
+/* ── 일괄 추가 ── */
+function setBulkMode(mode) {
+  bulkAddMode = mode;
+  document.querySelectorAll('#bulkAutoGroup .radio-btn, #bulkTypeGroup .radio-btn, #bulkAltGroup .radio-btn')
+    .forEach(el => el.classList.remove('active'));
+  const target = document.querySelector(`[data-mode="${mode}"]`);
+  if (target) target.classList.add('active');
+}
+
+function openBulkAddModal() {
+  document.getElementById('bulkAddText').value = '';
+  setBulkMode('auto');
+  document.getElementById('bulkAddModal').classList.add('show');
+}
+function closeBulkAddModal() { document.getElementById('bulkAddModal').classList.remove('show'); }
+
+function extractTrailingTime(text) {
+  const timePatterns = [
+    /((?:오전|오후)\s*\d{1,2}:\d{2})$/i,
+    /(\d{1,2}:\d{2}\s*(?:AM|PM))$/i,
+    /((?:AM|PM)\s*\d{1,2}:\d{2})$/i,
+    /(\d{1,2}:\d{2})$/
+  ];
+
+  for (const re of timePatterns) {
+    const tm = text.match(re);
+    if (tm) {
+      return {
+        text: text.slice(0, tm.index).trim(),
+        time: tm[1].trim()
+      };
+    }
+  }
+  return { text: text.trim(), time: '' };
+}
+
+function parseChatLogLine(line) {
+  const m = line.match(/^[•·\-–—]?\s*message\s+(sent\s+by|from)\s+([^:]+?)\s*:\s*(.*)$/i);
+  if (!m) return null;
+  const mode = m[1].toLowerCase().replace(/\s+/g, ' ');
+  const sender = m[2].trim();
+  const extracted = extractTrailingTime(m[3]);
+  if (!extracted.text) return null;
+  return {
+    type: mode === 'sent by' ? 'recv' : 'sent',
+    sender: sender || (mode === 'sent by' ? '상대방' : '나'),
+    text: extracted.text,
+    time: extracted.time || formatNow()
+  };
+}
+
+function submitBulkAdd() {
+  const raw = document.getElementById('bulkAddText').value;
+  const lines = raw.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  if (lines.length === 0) { showToast('추가할 메세지를 입력하세요'); return; }
+
+  const baseTime = new Date();
+  let added = 0, failed = 0;
+  const parsedBubbles = [];
+
+  lines.forEach((line, i) => {
+    let type, sender, text, time;
+    if (bulkAddMode === 'auto') {
+      const parsed = parseChatLogLine(line);
+      if (!parsed) { failed++; return; }
+      ({ type, sender, text, time } = parsed);
+    } else {
+      type = bulkAddMode === 'sent' || bulkAddMode === 'recv'
+        ? bulkAddMode
+        : (bulkAddMode === 'alt-recv'
+          ? (i % 2 === 0 ? 'recv' : 'sent')
+          : (i % 2 === 0 ? 'sent' : 'recv'));
+      sender = type === 'sent' ? '나' : '상대방';
+      const extracted = extractTrailingTime(line);
+      text = extracted.text;
+      time = extracted.time || formatNow(new Date(baseTime.getTime() + i * 60000));
+    }
+    parsedBubbles.push({
+      id: uid(), type, sender, time, text,
+      bgColor: document.getElementById(type === 'sent' ? 'g-sent-bg' : 'g-recv-bg').value,
+      textColor: document.getElementById(type === 'sent' ? 'g-sent-tc' : 'g-recv-tc').value,
+      fontSize: 14
+    });
+    added++;
+  });
+
+  if (added === 0) { showToast('인식할 수 있는 메세지가 없습니다'); return; }
+  bubbles.push(...parsedBubbles);
+  closeBulkAddModal();
+  render();
+  if (window.innerWidth < 768) switchTab('list');
+  if (bulkAddMode === 'auto' && failed > 0) showToast(`✓ ${added}개 추가됨 · ${failed}개 인식 실패`);
+  else showToast(`✓ ${added}개 말풍선 추가됨`);
+}
+function renderEditor() {
+  const panel = document.getElementById('tab-editor');
+  const b = selectedId ? getBubble(selectedId) : null;
+  if (!b) {
+    panel.innerHTML = '<p class="editor-empty">버블을 선택하거나<br>목록에서 새로 추가하세요</p>';
+    return;
+  }
+  if (b.type === 'date') {
+    panel.innerHTML = `
+      <p class="section-label">날짜선 편집</p>
+      <div class="field">
+        <label>날짜 표시</label>
+        <input type="text" id="e-date-text" value="${escHtml(b.text)}">
+      </div>
+      <div class="divider"></div>
+      <button class="del-btn-full" onclick="deleteBubble('${b.id}')">🗑 이 날짜선 삭제</button>
+      <div style="height:8px;flex-shrink:0"></div>
+    `;
+    document.getElementById('e-date-text').addEventListener('input', () => updateBubble(selectedId, 'text', document.getElementById('e-date-text').value));
+    return;
+  }
+  panel.innerHTML = `
+    <p class="section-label">${b.type==='sent'?'보낸':'받은'} 메세지 편집</p>
+
+    <div class="field">
+      <label>메세지 내용</label>
+      <textarea id="e-text" rows="3">${escHtml(b.text)}</textarea>
+    </div>
+    <div class="field">
+      <label>보낸 사람</label>
+      <input type="text" id="e-sender" value="${escHtml(b.sender)}">
+    </div>
+    <div class="field">
+      <label>시간</label>
+      <input type="text" id="e-time" value="${escHtml(b.time)}">
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="field">
+      <label>말풍선 유형</label>
+      <div class="radio-group">
+        <div class="radio-btn ${b.type==='sent'?'active':''}" onclick="changeType('sent')">보낸 메세지</div>
+        <div class="radio-btn ${b.type==='recv'?'active':''}" onclick="changeType('recv')">받은 메세지</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>폰트 크기</label>
+      <div class="range-row">
+        <input type="range" id="e-fs" min="10" max="24" step="0.5" value="${b.fontSize}">
+        <span class="range-val" id="fs-val">${b.fontSize}px</span>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="field">
+      <label>배경 색상 (이 버블만)</label>
+      <div class="color-row">
+        <input type="color" id="e-bg" value="${b.bgColor}">
+        <input class="color-hex" id="e-bg-hex" type="text" value="${b.bgColor.toUpperCase()}" maxlength="7">
+      </div>
+    </div>
+    <div class="field">
+      <label>텍스트 색상 (이 버블만)</label>
+      <div class="color-row">
+        <input type="color" id="e-tc" value="${b.textColor}">
+        <input class="color-hex" id="e-tc-hex" type="text" value="${b.textColor.toUpperCase()}" maxlength="7">
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <button class="del-btn-full" onclick="deleteBubble('${b.id}')">🗑 이 버블 삭제</button>
+    <div style="height:8px;flex-shrink:0"></div>
+  `;
+
+  const wireInput = (elId, key) => {
+    const el = document.getElementById(elId);
+    if (el) el.addEventListener('input', () => updateBubble(selectedId, key, el.value));
+  };
+  wireInput('e-text', 'text');
+  wireInput('e-sender', 'sender');
+  wireInput('e-time', 'time');
+
+  const fsEl = document.getElementById('e-fs');
+  fsEl.addEventListener('input', () => {
+    const v = parseFloat(fsEl.value);
+    document.getElementById('fs-val').textContent = v + 'px';
+    updateBubble(selectedId, 'fontSize', v);
+  });
+
+  syncBubbleColor('e-bg', 'e-bg-hex', 'bgColor');
+  syncBubbleColor('e-tc', 'e-tc-hex', 'textColor');
+}
+function syncBubbleColor(pickId, hexId, key) {
+  const pick = document.getElementById(pickId);
+  const hex  = document.getElementById(hexId);
+  if (!pick || !hex) return;
+  pick.addEventListener('input', () => { hex.value = pick.value.toUpperCase(); updateBubble(selectedId, key, pick.value); });
+  hex.addEventListener('input', () => {
+    const v = hex.value.trim();
+    if (/^#[0-9a-fA-F]{6}$/.test(v)) { pick.value = v; updateBubble(selectedId, key, v); }
+  });
+}
+
+function changeType(type) {
+  if (!selectedId) return;
+  getBubble(selectedId).type = type;
+  renderPreview(); renderEditor(); renderList();
+}
+
+/* ── DATE SEPARATOR ── */
+function getBubbleDate(b) {
+  const m = String(b.time || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return `${m[1]}-${m[2]}-${m[3]}`;
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function formatDateSeparator(dateStr) {
+  const m = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return dateStr;
+  const d = new Date(+m[1], +m[2]-1, +m[3]);
+  const days = ['일','월','화','수','목','금','토'];
+  return `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일 ${days[d.getDay()]}요일`;
+}
+function dateSeparatorCustomHtml(b) {
+  return `<div class=\"date-separator\"><span class=\"preview-editable-date\" data-date-id=\"${b.id}\" contenteditable=\"true\" spellcheck=\"false\">${escHtml(b.text)}</span></div>`;
+}
+
+function dateSeparatorHtml(b, previousDate) {
+  const date = getBubbleDate(b);
+  if (date === previousDate) return {html:'', date};
+  return {html:`<div class="date-separator">${escHtml(formatDateSeparator(date))}</div>`, date};
+}
+function dateSeparatorInlineHtmlText(text) {
+  return `<div style=\"display:flex;align-items:center;gap:10px;margin:14px 0 12px;color:#8e8e93;font-size:10.5px;line-height:1;white-space:nowrap;\"><span style=\"flex:1;height:1px;background:#d1d1d6;\"></span><span>${escHtml(text)}</span><span style=\"flex:1;height:1px;background:#d1d1d6;\"></span></div>`;
+}
+
+function dateSeparatorInlineHtml(b, previousDate) {
+  const date = getBubbleDate(b);
+  if (date === previousDate) return {html:'', date};
+  return {html:`<div style="display:flex;align-items:center;gap:10px;margin:14px 0 12px;color:#8e8e93;font-size:10.5px;line-height:1;white-space:nowrap;"><span style="flex:1;height:1px;background:#d1d1d6;"></span><span>${escHtml(formatDateSeparator(date))}</span><span style="flex:1;height:1px;background:#d1d1d6;"></span></div>`, date};
+}
+
+/* ── PREVIEW ── */
+function renderPreview() {
+  const preview = document.getElementById('chat-preview');
+  preview.innerHTML = bubbles.map(b => {
+    if (b.type === 'date') return dateSeparatorCustomHtml(b);
+    return bubbleToHtml(b);
+  }).join('');
+
+  preview.querySelectorAll('.preview-editable-date').forEach(el => {
+    el.addEventListener('click', e => {
+      e.stopPropagation();
+      selectedId = el.dataset.dateId;
+      renderList();
+      el.focus();
+    });
+
+    el.addEventListener('input', () => {
+      const b = getBubble(el.dataset.dateId);
+      if (!b) return;
+      b.text = el.innerText.replace(/\r/g, '').replace(/\n/g, '');
+      renderList();
+    });
+
+    el.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+      }
+    });
+  });
+
+  preview.querySelectorAll('.preview-editable-bubble').forEach(el => {
+    el.addEventListener('click', e => {
+      e.stopPropagation();
+      const id = el.dataset.bubbleId;
+      selectedId = id;
+      renderList();
+      el.focus();
+    });
+
+    el.addEventListener('input', () => {
+      const b = getBubble(el.dataset.bubbleId);
+      if (!b) return;
+      b.text = el.innerText.replace(/\r/g, '');
+      renderList();
+    });
+
+    el.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        document.execCommand('insertLineBreak');
+      }
+    });
+  });
+}
+
+function bubbleToHtml(b) {
+  const isSent = b.type === 'sent';
+
+  if (alignment === 'center') {
+    const br = isSent
+      ? 'border-radius:18px;border-bottom-right-radius:0;'
+      : 'border-radius:18px;border-bottom-left-radius:0;';
+    return `<div style="margin-bottom:15px; text-align:center;">
+  <div style="font-size:10.5px; color:#888; margin-bottom:5px;">${escHtml(b.time)}</div>
+  <div style="display:inline-block; max-width:85%; text-align:center;">
+    <div class="preview-editable-bubble" data-bubble-id="${b.id}" contenteditable="true" spellcheck="false"
+      style="display:inline-block; padding:10px 15px; ${br} font-size:${b.fontSize}px; background:${b.bgColor}; color:${b.textColor}; word-break:break-word; text-align:left;">${escHtml(b.text)}</div>
+    <div style="font-size:10.5px; color:#888; margin-top:4px; text-align:center;">${escHtml(b.sender)}</div>
+  </div>
+</div>`;
+  }
+
+  const align = isSent ? 'right' : 'left';
+  const centerOffset = 50 - (75 / 2);
+  const leftPadding = isSent ? (centerOffset + bubbleGap) : centerOffset;
+  const rightPadding = isSent ? centerOffset : (centerOffset + bubbleGap);
+  const br = isSent
+    ? 'border-radius:18px;border-bottom-right-radius:0;'
+    : 'border-radius:18px;border-bottom-left-radius:0;';
+  return `<div style="margin-bottom:10px;padding-left:${leftPadding}%;padding-right:${rightPadding}%;text-align:${align};">
+  <div style="font-size:10.5px;color:#888;margin-bottom:5px;">${escHtml(b.time)}</div>
+  <div style="display:inline-block;max-width:75%;text-align:left;">
+    <div class="preview-editable-bubble" data-bubble-id="${b.id}" contenteditable="true" spellcheck="false"
+      style="padding:10px 15px;${br}font-size:${b.fontSize}px;background:${b.bgColor};color:${b.textColor};word-break:break-word;">${escHtml(b.text)}</div>
+    <div style="font-size:10.5px;color:#888;margin-top:2px;text-align:${align};">${escHtml(b.sender)}</div>
+  </div>
+</div>`;
+}
+/* ── CODE MODAL ── */
+function openCodeModal() {
+  const html = bubbles.map(b => {
+    if (b.type === 'date') return dateSeparatorInlineHtmlText(b.text);
+    const isSent = b.type === 'sent';
+    const sep = { html: '', date: null };
+    if (alignment === 'center') {
+  const br = isSent
+    ? 'border-radius: 18px; border-bottom-right-radius: 0;'
+    : 'border-radius: 18px; border-bottom-left-radius: 0;';
+  return sep.html + `<div style="margin-bottom: 15px; text-align: center;">
+    <div style="font-size: 10.5px; color: #888; margin-bottom: 5px;">${escHtml(b.time)}</div>
+    <div style="display: inline-block; max-width: 85%; text-align: center;">
+        <div style="display: inline-block; padding: 10px 15px; ${br} font-size: ${b.fontSize}px; background: ${b.bgColor}; color: ${b.textColor}; word-break: break-word; text-align: left;">${escHtml(b.text)}</div>
+        <div style="font-size: 10.5px; color: #888; margin-top: 4px; text-align: center;">${escHtml(b.sender)}</div>
+    </div>
+</div>`;
+}
+    const align = isSent ? 'right' : 'left';
+    const centerOffset = 50 - (75 / 2);
+    const leftPadding = isSent ? (centerOffset + bubbleGap) : centerOffset;
+    const rightPadding = isSent ? centerOffset : (centerOffset + bubbleGap);
+    const br = isSent
+      ? 'border-radius: 18px; border-bottom-right-radius: 0;'
+      : 'border-radius: 18px; border-bottom-left-radius: 0;';
+    return sep.html + `<div style="margin-bottom: 10px; padding-left: ${leftPadding}%; padding-right: ${rightPadding}%; text-align: ${align};">
+    <div style="font-size: 10.5px; color: #888; margin-bottom: 5px;">${escHtml(b.time)}</div>
+    <div style="display: inline-block; max-width: 75%; text-align: left;">
+        <div style="padding: 10px 15px; ${br} font-size: ${b.fontSize}px; background: ${b.bgColor}; color: ${b.textColor}; word-break: break-word;">${escHtml(b.text)}</div>
+        <div style="font-size: 10.5px; color: #888; margin-top: 2px; text-align: ${align};">${escHtml(b.sender)}</div>
+    </div>
+</div>`;
+  }).join('\n\n');
+  document.getElementById('codeOutput').value = html;
+  document.getElementById('codeModal').classList.add('show');
+}
+
+function closeCodeModal() { document.getElementById('codeModal').classList.remove('show'); }
+
+function copyCode() {
+  navigator.clipboard.writeText(document.getElementById('codeOutput').value)
+    .then(() => showToast('✅ 클립보드에 복사됨!'));
+}
+
+/* ── IMAGE EXPORT ── */
+function exportImage() {
+  const el = document.getElementById('chat-preview');
+  const prevBg  = el.style.backgroundColor;
+  const prevPad = el.style.padding;
+  el.style.backgroundColor = 'transparent';
+  el.style.padding = '20px';
+  showToast('⏳ 이미지 생성 중...');
+  html2canvas(el, { backgroundColor: null, scale: 2, useCORS: true }).then(canvas => {
+    el.style.backgroundColor = prevBg;
+    el.style.padding = prevPad;
+    const link = document.createElement('a');
+    link.download = 'messages.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    showToast('🖼 이미지 저장됨!');
+  });
+}
+
+/* ── TOAST ── */
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+/* ── UTILS ── */
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ── SWIPE ── */
+let touchStartX = 0;
+document.querySelector('.main').addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+document.querySelector('.main').addEventListener('touchend', e => {
+  if (window.innerWidth >= 768) return;
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  if (Math.abs(dx) < 60) return;
+  const tabs = ['list','settings','editor','preview'];
+  const ci = tabs.indexOf(currentTab);
+  if (dx < 0 && ci < tabs.length-1) switchTab(tabs[ci+1]);
+  else if (dx > 0 && ci > 0) switchTab(tabs[ci-1]);
+}, { passive: true });
+
+document.getElementById('codeModal').addEventListener('click', function(e) {
+  if (e.target === this) closeCodeModal();
+});
+document.getElementById('bulkAddModal').addEventListener('click', function(e) {
+  if (e.target === this) closeBulkAddModal();
+});
+document.getElementById('bulkColorModal').addEventListener('click', function(e) {
+  if (e.target === this) closeBulkColorModal();
+});
+
+/* ── INIT ── */
+setupGlobalColorSync('g-sent-bg', 'g-sent-bg-hex');
+setupGlobalColorSync('g-sent-tc', 'g-sent-tc-hex');
+setupGlobalColorSync('g-recv-bg', 'g-recv-bg-hex');
+setupGlobalColorSync('g-recv-tc', 'g-recv-tc-hex');
+setupGlobalColorSync('bulk-bg', 'bulk-bg-hex');
+setupGlobalColorSync('bulk-tc', 'bulk-tc-hex');
+
+render();
+</script>
+</body>
+</html>
